@@ -7,7 +7,7 @@ import FeaturedProjects from '../components/FeaturedProjects';
 import CreatorDiscovery from '../components/CreatorDiscovery';
 import DashboardPreview from '../components/DashboardPreview';
 import TrustSection from '../components/TrustSection';
-import WhyCoinLift from '../components/WhyCoinLift';
+import WhyCrypLift from '../components/WhyCrypLift';
 import CollaborationFlow from '../components/CollaborationFlow';
 import CTASection from '../components/CTASection';
 
@@ -20,7 +20,7 @@ export default function Home({ onNavigate, onSelectProject, onSelectCreator }) {
       {/* 3. Trust / Platform Stats */}
       <Stats />
 
-      {/* 4. How COINLIFT Works */}
+      {/* 4. How CrypLift Works */}
       <HowItWorks />
 
       {/* 5. Two-Sided Platform Section */}
@@ -38,8 +38,8 @@ export default function Home({ onNavigate, onSelectProject, onSelectCreator }) {
       {/* 9. Transparency / Trust Section */}
       <TrustSection />
 
-      {/* 10. Why COINLIFT Section */}
-      <WhyCoinLift />
+      {/* 10. Why CrypLift Section */}
+      <WhyCrypLift />
 
       {/* 11. Collaboration Flow Visual */}
       <CollaborationFlow />

@@ -1,214 +1,292 @@
-import React, { useState } from 'react';
-import { FEATURED_PROJECTS } from '../data/projectsData';
-import { Search, Filter, Layers, Sparkles, ArrowUpRight, Plus, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { projectsService } from '../services/api';
+import { Search, Filter, Layers, Sparkles, ArrowUpRight, Plus, CheckCircle2, Loader2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function ProjectsPage({ onSelectProject, onNavigate }) {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Search & Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTag, setSelectedTag] = useState('All');
-  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedNetwork, setSelectedNetwork] = useState('All');
+  const [selectedStage, setSelectedStage] = useState('All');
 
-  const tags = ['All', 'Infrastructure', 'Cross-Chain', 'NFT', 'DeAI', 'Gaming', 'DeFi'];
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const filteredProjects = FEATURED_PROJECTS.filter((project) => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          project.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          project.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTag = selectedTag === 'All' || project.tags.some(t => t.toLowerCase().includes(selectedTag.toLowerCase()));
-    return matchesSearch && matchesTag;
-  });
+  const categories = ['All', 'Infrastructure', 'Cross-Chain', 'NFT', 'DeAI', 'Gaming', 'DeFi'];
+  const networks = ['All', 'Ethereum', 'Solana', 'Polygon', 'Arbitrum', 'Optimism', 'BNB Chain'];
+  const stages = ['All', 'Mainnet', 'Testnet', 'Alpha', 'Beta'];
 
-  const handleSubmitCampaign = (e) => {
-    e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setShowSubmissionModal(false);
-      setSubmitted(false);
-    }, 1500);
+  const fetchProjects = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const queryFilters = {
+        page,
+        limit: 12
+      };
+
+      if (searchTerm.trim()) queryFilters.search = searchTerm.trim();
+      if (selectedCategory !== 'All') queryFilters.category = selectedCategory;
+      if (selectedNetwork !== 'All') queryFilters.network = selectedNetwork;
+      if (selectedStage !== 'All') queryFilters.projectStage = selectedStage;
+
+      const res = await projectsService.getAll(queryFilters);
+      if (res.success) {
+        setProjects(res.data || []);
+        if (res.pagination) {
+          setTotalPages(res.pagination.totalPages || 1);
+        } else {
+          setTotalPages(1);
+        }
+      } else {
+        throw new Error(res.message || 'Failed to fetch projects');
+      }
+    } catch (err) {
+      console.error('[Fetch Projects Error]', err);
+      setError('Unable to connect to CrypLift. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    fetchProjects();
+  }, [searchTerm, selectedCategory, selectedNetwork, selectedStage, page]);
+
   return (
-    <div className="pt-28 pb-20 bg-[#05070e] min-h-screen">
+    <div className="pt-32 pb-20 bg-[#FAF8FF] min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-semibold mb-4">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-100 border border-purple-200 text-purple-700 text-xs font-bold mb-4 shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
               <span>Token Projects Directory</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-2 font-sans">
-              Emerging Web3 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Ecosystems</span>
+            <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight mb-2 font-sans">
+              Emerging Web3 <span className="text-gradient-purple">Ecosystems</span>
             </h1>
-            <p className="text-slate-300 text-base sm:text-lg max-w-2xl">
-              Discover token projects actively looking for creator-led content, community reach, and marketing campaigns.
+            <p className="text-slate-600 text-base sm:text-lg max-w-2xl font-medium">
+              Discover verified token projects actively looking for creator-led content, community reach, and marketing campaigns.
             </p>
           </div>
 
           <button
-            onClick={() => setShowSubmissionModal(true)}
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all flex items-center gap-2 self-start md:self-auto"
+            onClick={() => onNavigate('/dashboard')}
+            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-500 text-white font-extrabold text-xs shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-0.5 transition-all flex items-center gap-2 self-start md:self-auto"
           >
             <Plus className="w-4 h-4" />
-            <span>List Your Project</span>
+            <span>Manage Project Profile</span>
           </button>
         </div>
 
         {/* Search & Filter Bar */}
-        <div className="bg-[#0b0f19] p-6 rounded-2xl border border-white/10 mb-10 space-y-4 shadow-xl">
+        <div className="saas-card p-6 rounded-3xl mb-10 space-y-4 shadow-lg border border-purple-100 bg-white">
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">
               <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
               <input
                 type="text"
-                placeholder="Search projects by name, category, or technology..."
+                placeholder="Search projects by name, description, category, or network..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-[#05070e] text-sm text-white pl-11 pr-4 py-3 rounded-xl border border-white/10 focus:outline-none focus:border-cyan-500"
+                onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+                className="w-full bg-purple-50/50 text-sm text-slate-900 pl-11 pr-4 py-3 rounded-2xl border border-purple-200 focus:outline-none focus:border-purple-600 font-medium"
               />
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto scrollbar-none">
-              {tags.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setSelectedTag(t)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                    selectedTag === t
-                      ? 'bg-cyan-500 text-black font-bold shadow-md'
-                      : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
+            <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
+              <select
+                value={selectedCategory}
+                onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}
+                className="bg-white text-xs font-bold text-slate-800 border border-purple-200 rounded-2xl px-3 py-3 focus:outline-none focus:border-purple-600 shadow-2xs"
+              >
+                {categories.map((c) => (
+                  <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>
+                ))}
+              </select>
+
+              <select
+                value={selectedNetwork}
+                onChange={(e) => { setSelectedNetwork(e.target.value); setPage(1); }}
+                className="bg-white text-xs font-bold text-slate-800 border border-purple-200 rounded-2xl px-3 py-3 focus:outline-none focus:border-purple-600 shadow-2xs"
+              >
+                {networks.map((n) => (
+                  <option key={n} value={n}>{n === 'All' ? 'All Networks' : n}</option>
+                ))}
+              </select>
+
+              <select
+                value={selectedStage}
+                onChange={(e) => { setSelectedStage(e.target.value); setPage(1); }}
+                className="bg-white text-xs font-bold text-slate-800 border border-purple-200 rounded-2xl px-3 py-3 focus:outline-none focus:border-purple-600 shadow-2xs"
+              >
+                {stages.map((st) => (
+                  <option key={st} value={st}>{st === 'All' ? 'All Stages' : st}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
 
-        {/* Project Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((project) => (
-            <div
-              key={project.id}
-              className="group relative rounded-2xl bg-[#090d18] p-6 border border-white/10 hover:border-cyan-500/40 transition-all duration-300 shadow-xl hover:shadow-cyan-500/10 hover:-translate-y-1 flex flex-col justify-between"
+        {/* Loading / Error / Empty States */}
+        {loading ? (
+          <div className="py-20 text-center space-y-4">
+            <Loader2 className="w-10 h-10 text-purple-600 animate-spin mx-auto" />
+            <p className="text-sm font-bold text-slate-600">Loading project profiles from database...</p>
+          </div>
+        ) : error ? (
+          <div className="py-16 text-center max-w-md mx-auto p-8 rounded-3xl bg-red-50 border border-red-200 space-y-4">
+            <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
+            <h3 className="text-base font-extrabold text-slate-900">{error}</h3>
+            <button
+              onClick={fetchProjects}
+              className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-700 transition-all"
             >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${project.logoColor} flex items-center justify-center text-white font-extrabold text-lg shadow-md`}>
-                      {project.name.charAt(0)}
-                    </div>
+              Try Again
+            </button>
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="py-20 text-center max-w-md mx-auto p-8 rounded-3xl bg-white border border-purple-100 shadow-sm space-y-4">
+            <Layers className="w-12 h-12 text-purple-300 mx-auto" />
+            <h3 className="text-lg font-extrabold text-slate-900">No project profiles found</h3>
+            <p className="text-xs text-slate-500 font-medium">Try adjusting your search parameters or resetting active filters.</p>
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedCategory('All');
+                setSelectedNetwork('All');
+                setSelectedStage('All');
+                setPage(1);
+              }}
+              className="px-5 py-2.5 rounded-xl bg-purple-100 text-purple-800 font-extrabold text-xs hover:bg-purple-200 transition-all"
+            >
+              Reset Filters
+            </button>
+          </div>
+        ) : (
+          /* Project Cards Grid */
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+              {projects.map((project) => {
+                const name = project.projectName || project.user?.name || 'Untitled Web3 Project';
+                const initial = name.charAt(0).toUpperCase();
+                const category = project.category || 'Infrastructure';
+                const description = project.description || 'Verified Web3 token project looking for content collaborations.';
+                const network = project.network || 'Ethereum';
+                const tokenSymbol = project.tokenSymbol || 'TOKEN';
+                const stage = project.projectStage || 'Mainnet';
+
+                return (
+                  <div
+                    key={project._id || project.id}
+                    className="group relative rounded-3xl saas-card p-7 saas-card-hover flex flex-col justify-between border border-purple-100 hover:border-purple-400 bg-white"
+                  >
                     <div>
-                      <h3 className="text-lg font-bold text-white font-sans">{project.name}</h3>
-                      <span className="text-xs text-slate-400 font-mono">{project.category}</span>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center text-white font-black text-lg shadow-md">
+                            {initial}
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-extrabold text-slate-900 font-sans group-hover:text-purple-700 transition-colors">{name}</h3>
+                            <span className="text-xs text-purple-600 font-mono font-semibold">{category}</span>
+                          </div>
+                        </div>
+
+                        <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 font-mono">
+                          {tokenSymbol}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-600 leading-relaxed mb-6 font-medium line-clamp-2">
+                        {description}
+                      </p>
+
+                      <div className="space-y-2 mb-6 bg-purple-50/60 p-3.5 rounded-2xl border border-purple-100">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500 font-medium">Blockchain Network:</span>
+                          <span className="font-extrabold text-slate-900 font-mono">{network}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500 font-medium">Project Stage:</span>
+                          <span className="font-extrabold text-purple-700 font-mono">{stage}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5 mb-6">
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-white text-slate-700 border border-purple-100 shadow-2xs">
+                          {network}
+                        </span>
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-white text-slate-700 border border-purple-100 shadow-2xs">
+                          {stage}
+                        </span>
+                      </div>
                     </div>
+
+                    <div className="pt-4 border-t border-purple-100 flex items-center justify-between">
+                      <span className="text-[11px] text-purple-700 font-bold">{tokenSymbol} Project</span>
+                      <button
+                        onClick={() => onSelectProject({
+                          id: project._id,
+                          _id: project._id,
+                          name,
+                          category,
+                          description,
+                          symbol: tokenSymbol,
+                          network,
+                          communitySize: '50K+ Audience',
+                          budget: '1,000 - 5,000 USDC',
+                          compatibility: 95,
+                          deliverables: ['1x Video Review', '2x Tweet Threads'],
+                          tags: [category, network, stage],
+                          logoColor: 'from-purple-600 to-indigo-600'
+                        })}
+                        className="px-4 py-2 rounded-xl bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-700 font-extrabold text-xs transition-all flex items-center gap-1 border border-purple-200"
+                      >
+                        <span>View Details</span>
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
                   </div>
+                );
+              })}
+            </div>
 
-                  <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
-                    {project.compatibility}% Match
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-300 leading-relaxed mb-6">
-                  {project.description}
-                </p>
-
-                <div className="space-y-2 mb-6 bg-[#05070e] p-3 rounded-xl border border-white/5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-400">Community Reach:</span>
-                    <span className="font-bold text-white">{project.communitySize}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-400">Budget Pool:</span>
-                    <span className="font-bold text-emerald-400 font-mono">{project.budget}</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-1.5 mb-6">
-                  {project.tags.map((tag) => (
-                    <span key={tag} className="text-[10px] font-medium px-2 py-0.5 rounded bg-white/5 text-slate-300">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-[11px] text-cyan-300 font-semibold">{project.campaignType}</span>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-3 pt-6 border-t border-purple-100">
                 <button
-                  onClick={() => onSelectProject(project)}
-                  className="px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-bold text-xs transition-colors flex items-center gap-1"
+                  disabled={page <= 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  className="px-4 py-2 rounded-xl bg-white border border-purple-200 text-slate-700 text-xs font-bold hover:bg-purple-50 disabled:opacity-40 flex items-center gap-1"
                 >
-                  <span>View Details</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 text-cyan-400" />
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Previous</span>
+                </button>
+                <span className="text-xs font-bold text-slate-600 font-mono">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  className="px-4 py-2 rounded-xl bg-white border border-purple-200 text-slate-700 text-xs font-bold hover:bg-purple-50 disabled:opacity-40 flex items-center gap-1"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
-
-            </div>
-          ))}
-        </div>
+            )}
+          </>
+        )}
 
       </div>
-
-      {/* List Project Modal */}
-      {showSubmissionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="relative w-full max-w-md rounded-3xl bg-[#090e1a] border border-white/10 p-6 sm:p-8 shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-2 font-sans">List Your Token Project</h3>
-            <p className="text-xs text-slate-400 mb-6">Create a campaign brief to connect with vetted Web3 content creators.</p>
-
-            {submitted ? (
-              <div className="py-8 text-center space-y-3">
-                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto animate-bounce" />
-                <h4 className="text-base font-bold text-white">Campaign Submitted!</h4>
-                <p className="text-xs text-slate-400">Our team is reviewing your project details. You will receive creator match alerts shortly.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmitCampaign} className="space-y-4">
-                <div>
-                  <label className="text-xs text-slate-300 font-semibold block mb-1">Project Name</label>
-                  <input type="text" required placeholder="e.g. ApexChain" className="w-full bg-[#05070e] text-xs text-white p-3 rounded-xl border border-white/10 focus:outline-none focus:border-cyan-500" />
-                </div>
-
-                <div>
-                  <label className="text-xs text-slate-300 font-semibold block mb-1">Category</label>
-                  <select className="w-full bg-[#05070e] text-xs text-white p-3 rounded-xl border border-white/10 focus:outline-none focus:border-cyan-500">
-                    <option>Layer 1 / Layer 2</option>
-                    <option>DeFi Infrastructure</option>
-                    <option>Web3 Gaming & Metaverse</option>
-                    <option>AI & Data Oracles</option>
-                    <option>NFT & Creator Economy</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs text-slate-300 font-semibold block mb-1">Campaign Budget (USDC)</label>
-                  <input type="text" required placeholder="e.g. 5,000 USDC" className="w-full bg-[#05070e] text-xs text-white p-3 rounded-xl border border-white/10 focus:outline-none focus:border-cyan-500" />
-                </div>
-
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => setShowSubmissionModal(false)}
-                    className="px-4 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold hover:bg-white/10"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs shadow-lg shadow-cyan-500/20"
-                  >
-                    Submit Campaign
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

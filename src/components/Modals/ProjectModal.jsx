@@ -1,16 +1,45 @@
 import React, { useState } from 'react';
-import { X, CheckCircle2, ArrowRight, ShieldCheck, Users, Layers, Zap, ExternalLink, MessageSquare } from 'lucide-react';
+import { X, CheckCircle2, ArrowRight, ShieldCheck, Users, Layers, Zap, ExternalLink, MessageSquare, AlertCircle, Loader2 } from 'lucide-react';
+import { campaignsService } from '../../services/api';
 
 export default function ProjectModal({ project, onClose, onApply }) {
   const [applied, setApplied] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   if (!project) return null;
 
-  const handleApplyClick = () => {
-    setApplied(true);
-    setTimeout(() => {
-      onApply && onApply(project);
-    }, 1200);
+  const handleApplyClick = async () => {
+    if (loading || applied) return;
+    setErrorMessage('');
+
+    const targetId = project._id || project.id;
+    if (!targetId || targetId.startsWith('CMP-') || targetId === 'solanapulse' || targetId === 'zkrealm') {
+      // Demo project fallback
+      setApplied(true);
+      setTimeout(() => {
+        onApply && onApply(project);
+      }, 1000);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await campaignsService.apply(targetId, 'Excited to collaborate on this campaign!');
+      if (res.success) {
+        setApplied(true);
+        setTimeout(() => {
+          onApply && onApply(project);
+        }, 1200);
+      } else {
+        throw new Error(res.message || 'Failed to submit application');
+      }
+    } catch (err) {
+      console.error('[Apply Error]', err);
+      setErrorMessage(err.message || 'Failed to submit application. Ensure you are logged in as Creator.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -97,19 +126,32 @@ export default function ProjectModal({ project, onClose, onApply }) {
             ))}
           </div>
 
+          {errorMessage && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           {/* CTA Action */}
           <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-4">
             <span className="text-xs text-slate-400 font-mono">Escrow Protected Campaign</span>
             
-            {applied ? (
+            {loading ? (
+              <div className="px-6 py-3 rounded-xl bg-purple-600/30 text-purple-200 border border-purple-500/40 text-xs font-bold flex items-center gap-2">
+                <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
+                <span>Submitting Application...</span>
+              </div>
+            ) : applied ? (
               <div className="px-6 py-3 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <span>Application Submitted!</span>
               </div>
             ) : (
               <button
+                disabled={loading}
                 onClick={handleApplyClick}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all flex items-center gap-2"
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all flex items-center gap-2 disabled:opacity-50"
               >
                 <span>Apply as Creator</span>
                 <ArrowRight className="w-4 h-4" />
