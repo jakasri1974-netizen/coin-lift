@@ -1,0 +1,351 @@
+// CoinLift Prisma Database Schema
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Role Enum
+enum Role {
+  CREATOR
+  PROJECT_OWNER
+  ADMIN
+}
+
+// Account Status Enum
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+// Moderation / Approval Status Enum
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Campaign Lifecycle Status Enum
+enum CampaignStatus {
+  DRAFT
+  PENDING_APPROVAL
+  PUBLISHED
+  PAUSED
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+// Application Lifecycle Status Enum
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+// Collaboration Status Enum
+enum CollaborationStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+// Digital Agreement Status Enum
+enum AgreementStatus {
+  DRAFT
+  PENDING_ACCEPTANCE
+  ACCEPTED
+  REJECTED
+}
+
+// User Model
+model User {
+  id           String      @id @default(uuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         Role        @default(CREATOR)
+  status       UserStatus  @default(ACTIVE)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // 1-to-1 Profile Relations
+  creatorProfile CreatorProfile?
+  projectProfile ProjectProfile?
+
+  // 1-to-Many Admin Logs & Messages
+  adminLogs      AdminLog[]
+  messages       Message[]
+  agreements     Agreement[]
+
+  @@index([email])
+  @@index([role])
+}
+
+// Creator Profile Model
+model CreatorProfile {
+  id                 String         @id @default(uuid())
+  userId             String         @unique
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName        String
+  headline           String?        // Professional Headline
+  bio                String?        @db.Text
+  profileImage       String?
+  coverImage         String?
+  location           String?
+  category           String
+  availability       String?        @default("Available")
+
+  // Social Platforms
+  youtube            String?
+  linkedin           String?
+  twitter            String?
+  instagram          String?
+  discord            String?
+  website            String?
+
+  // Professional Information
+  services           String[]
+  skills             String[]
+  portfolio          Json?          // Array of links/assets
+  previousProjects   Json?          // Array of project objects
+
+  // Audience Information
+  followersCount     Int            @default(0)
+  engagementRate     Float          @default(0.0)
+  audienceCategory   String?
+  audienceRegions    String[]
+
+  // Status & Verification
+  approvalStatus     ApprovalStatus @default(PENDING)
+  verified           Boolean        @default(false)
+  rejectionReason    String?        @db.Text
+
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  applications       Application[]
+  collaborations     Collaboration[]
+  agreements         Agreement[]
+
+  @@index([userId])
+  @@index([approvalStatus])
+  @@index([category])
+}
+
+// Project Profile Model
+model ProjectProfile {
+  id                 String         @id @default(uuid())
+  userId             String         @unique
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name               String
+  tagline            String?
+  logo               String?
+  coverImage         String?
+  description        String         @db.Text
+  category           String
+  projectType        String?
+  location           String?
+  foundedYear        String?
+
+  // Web3 Information
+  network            String?
+  contractAddress    String?
+  tokenName          String?
+  tokenSymbol        String?
+  tokenWebsite       String?
+  documentationUrl   String?
+  whitepaperUrl      String?
+
+  // Social & Community Links
+  website            String?
+  twitter            String?
+  discord            String?
+  telegram           String?
+  github             String?
+  linkedin           String?
+  youtube            String?
+  medium             String?
+
+  // Project Information
+  vision             String?        @db.Text
+  keyFeatures        String[]       @default([])
+  technology         String?        @db.Text
+  ecosystem          String?        @db.Text
+  targetAudience     String?        @db.Text
+  roadmap            String?        @db.Text
+  teamInfo           String?        @db.Text
+
+  // Achievements
+  achievements       Json?
+
+  status             UserStatus     @default(ACTIVE)
+  approvalStatus     ApprovalStatus @default(PENDING)
+  verified           Boolean        @default(false)
+  rejectionReason    String?        @db.Text
+
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  campaigns          Campaign[]
+  collaborations     Collaboration[]
+  agreements         Agreement[]
+
+  @@index([userId])
+  @@index([approvalStatus])
+  @@index([category])
+}
+
+// Campaign Model
+model Campaign {
+  id                 String         @id @default(uuid())
+  projectId          String
+  project            ProjectProfile @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title              String
+  description        String         @db.Text
+  category           String
+  budget             Float
+  currency           String         @default("USDC")
+  deliverables       String[]
+  requirements       String?        @db.Text
+  status             CampaignStatus @default(DRAFT)
+  rejectionReason    String?        @db.Text
+  startDate          DateTime?
+  endDate            DateTime?
+
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  applications       Application[]
+  collaborations     Collaboration[]
+  agreements         Agreement[]
+
+  @@index([projectId])
+  @@index([status])
+  @@index([category])
+}
+
+// Application Model
+model Application {
+  id                   String            @id @default(uuid())
+  creatorId            String
+  creator              CreatorProfile    @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  campaignId           String
+  campaign             Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  proposal             String            @db.Text
+  proposedDeliverables String[]
+  proposedRate         Float?
+  status               ApplicationStatus @default(PENDING)
+
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  collaboration        Collaboration?
+
+  @@unique([creatorId, campaignId], name: "unique_creator_campaign_application")
+  @@index([creatorId])
+  @@index([campaignId])
+  @@index([status])
+}
+
+// Collaboration Model
+model Collaboration {
+  id            String              @id @default(uuid())
+  applicationId String              @unique
+  application   Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  creatorId     String
+  creator       CreatorProfile      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  projectId     String
+  project       ProjectProfile      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  campaignId    String
+  campaign      Campaign            @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  status        CollaborationStatus @default(ACTIVE)
+  startedAt     DateTime            @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  messages      Message[]
+  agreements    Agreement[]
+
+  @@index([creatorId])
+  @@index([projectId])
+  @@index([campaignId])
+  @@index([status])
+}
+
+// Message Model
+model Message {
+  id              String        @id @default(uuid())
+  collaborationId String
+  collaboration   Collaboration @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
+  senderId        String
+  sender          User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content         String        @db.Text
+  readAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([collaborationId])
+  @@index([senderId])
+}
+
+// Admin Log Model
+model AdminLog {
+  id           String   @id @default(uuid())
+  adminUserId  String
+  adminUser    User     @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  action       String
+  targetType   String
+  targetId     String
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@index([adminUserId])
+  @@index([targetType, targetId])
+}
+
+// Digital Agreement / Contract Model (Phase 10)
+model Agreement {
+  id                  String          @id @default(uuid())
+  title               String
+  collaborationId     String
+  collaboration       Collaboration   @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
+  campaignId          String
+  campaign            Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  projectId           String
+  project             ProjectProfile  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creatorId           String
+  creator             CreatorProfile  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  projectOwnerId      String
+  projectOwner        User            @relation(fields: [projectOwnerId], references: [id], onDelete: Cascade)
+
+  scope               String          @db.Text
+  deliverables        String[]
+  rate                Float
+  currency            String          @default("USDC")
+  startDate           DateTime?
+  deadline            DateTime?
+  status              AgreementStatus @default(DRAFT)
+  version             Int             @default(1)
+
+  creatorAcceptedAt   DateTime?
+  rejectionReason     String?         @db.Text
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([collaborationId])
+  @@index([campaignId])
+  @@index([projectId])
+  @@index([creatorId])
+  @@index([projectOwnerId])
+  @@index([status])
+}

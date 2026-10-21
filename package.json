@@ -6,19 +6,32 @@
   "scripts": {
     "dev": "vite.cmd",
     "build": "vite.cmd build",
-    "preview": "vite.cmd preview"
+    "preview": "vite.cmd preview",
+    "server": "node server/src/server.js",
+    "server:dev": "nodemon server/src/server.js",
+    "prisma:generate": "prisma generate --schema=server/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=server/prisma/schema.prisma"
   },
   "dependencies": {
+    "@prisma/client": "5.22.0",
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.475.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.5.2"
+    "tailwind-merge": "^2.5.2",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "nodemon": "^3.1.14",
     "postcss": "^8.4.49",
+    "prisma": "5.22.0",
     "tailwindcss": "^3.4.17",
     "vite": "^5.4.11"
   }

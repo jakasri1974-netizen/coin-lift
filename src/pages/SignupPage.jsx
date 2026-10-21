@@ -1,18 +1,34 @@
 import React, { useState } from 'react';
-import { ArrowUpRight, Users, Layers, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
+import { Users, Layers, CheckCircle2, ArrowRight, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function SignupPage({ onNavigate }) {
-  const [role, setRole] = useState('creator'); // 'creator' or 'project'
+  const [selectedRole, setSelectedRole] = useState('CREATOR'); // 'CREATOR' or 'PROJECT_OWNER'
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
   const [signedUp, setSignedUp] = useState(false);
 
-  const handleSubmit = (e) => {
+  const { register } = useAuth();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSignedUp(true);
-    setTimeout(() => {
-      onNavigate('/');
-    }, 1500);
+    setFormError(null);
+    setIsSubmitting(true);
+
+    const result = await register(name, email, password, selectedRole);
+    setIsSubmitting(false);
+
+    if (result && result.success) {
+      setSignedUp(true);
+      setTimeout(() => {
+        onNavigate('/');
+      }, 1000);
+    } else {
+      setFormError(result?.error || 'Registration failed. Please try again.');
+    }
   };
 
   return (
@@ -34,6 +50,13 @@ export default function SignupPage({ onNavigate }) {
             </p>
           </div>
 
+          {formError && (
+            <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center gap-2.5">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
+
           {signedUp ? (
             <div className="py-10 text-center space-y-3">
               <CheckCircle2 className="w-14 h-14 text-emerald-400 mx-auto animate-bounce" />
@@ -47,41 +70,41 @@ export default function SignupPage({ onNavigate }) {
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <button
                   type="button"
-                  onClick={() => setRole('creator')}
+                  onClick={() => setSelectedRole('CREATOR')}
                   className={`p-4 rounded-2xl border text-left transition-all ${
-                    role === 'creator'
+                    selectedRole === 'CREATOR'
                       ? 'bg-purple-500/15 border-purple-500 text-white shadow-lg shadow-purple-500/10'
                       : 'bg-[#05070e] border-white/10 text-slate-400 hover:text-white'
                   }`}
                 >
-                  <Users className={`w-6 h-6 mb-2 ${role === 'creator' ? 'text-purple-400' : 'text-slate-500'}`} />
+                  <Users className={`w-6 h-6 mb-2 ${selectedRole === 'CREATOR' ? 'text-purple-400' : 'text-slate-500'}`} />
                   <p className="text-xs font-bold text-white">I am a Creator</p>
                   <p className="text-[10px] text-slate-400 mt-0.5">Discover Web3 project briefs</p>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setRole('project')}
+                  onClick={() => setSelectedRole('PROJECT_OWNER')}
                   className={`p-4 rounded-2xl border text-left transition-all ${
-                    role === 'project'
+                    selectedRole === 'PROJECT_OWNER'
                       ? 'bg-cyan-500/15 border-cyan-500 text-white shadow-lg shadow-cyan-500/10'
                       : 'bg-[#05070e] border-white/10 text-slate-400 hover:text-white'
                   }`}
                 >
-                  <Layers className={`w-6 h-6 mb-2 ${role === 'project' ? 'text-cyan-400' : 'text-slate-500'}`} />
-                  <p className="text-xs font-bold text-white">I am a Project</p>
+                  <Layers className={`w-6 h-6 mb-2 ${selectedRole === 'PROJECT_OWNER' ? 'text-cyan-400' : 'text-slate-500'}`} />
+                  <p className="text-xs font-bold text-white">I am a Project Owner</p>
                   <p className="text-[10px] text-slate-400 mt-0.5">Launch creator campaigns</p>
                 </button>
               </div>
 
               <div>
                 <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                  {role === 'creator' ? 'Full Name / Channel Handle' : 'Project / Organization Name'}
+                  {selectedRole === 'CREATOR' ? 'Full Name / Channel Handle' : 'Project / Organization Name'}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder={role === 'creator' ? 'Alex Vance (@vance_crypto)' : 'NovaX Foundation'}
+                  placeholder={selectedRole === 'CREATOR' ? 'Alex Vance (@vance_crypto)' : 'NovaX Foundation'}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full bg-[#05070e] text-xs text-white p-3.5 rounded-xl border border-white/10 focus:outline-none focus:border-cyan-500"
@@ -105,7 +128,10 @@ export default function SignupPage({ onNavigate }) {
                 <input
                   type="password"
                   required
+                  minLength={8}
                   placeholder="At least 8 characters..."
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-[#05070e] text-xs text-white p-3.5 rounded-xl border border-white/10 focus:outline-none focus:border-cyan-500"
                 />
               </div>
@@ -118,10 +144,20 @@ export default function SignupPage({ onNavigate }) {
 
               <button
                 type="submit"
-                className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 text-white font-bold text-xs shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 text-white font-bold text-xs shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <span>Get Started as {role === 'creator' ? 'Creator' : 'Project'}</span>
-                <ArrowRight className="w-4 h-4" />
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Creating Account...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Get Started as {selectedRole === 'CREATOR' ? 'Creator' : 'Project Owner'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
 
             </form>

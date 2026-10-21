@@ -1,17 +1,32 @@
 import React, { useState } from 'react';
-import { ArrowUpRight, ShieldCheck, Mail, Lock, CheckCircle2, Wallet, ArrowRight } from 'lucide-react';
+import { ArrowUpRight, Mail, Lock, CheckCircle2, Wallet, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage({ onNavigate }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
   const [loggedIn, setLoggedIn] = useState(false);
 
-  const handleSubmit = (e) => {
+  const { login } = useAuth();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoggedIn(true);
-    setTimeout(() => {
-      onNavigate('/');
-    }, 1500);
+    setFormError(null);
+    setIsSubmitting(true);
+
+    const result = await login(email, password);
+    setIsSubmitting(false);
+
+    if (result && result.success) {
+      setLoggedIn(true);
+      setTimeout(() => {
+        onNavigate('/');
+      }, 1000);
+    } else {
+      setFormError(result?.error || 'Login failed. Please check your credentials.');
+    }
   };
 
   return (
@@ -31,6 +46,13 @@ export default function LoginPage({ onNavigate }) {
               Sign in to manage creator collaborations & active campaigns
             </p>
           </div>
+
+          {formError && (
+            <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center gap-2.5">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
 
           {loggedIn ? (
             <div className="py-8 text-center space-y-3">
@@ -81,10 +103,20 @@ export default function LoginPage({ onNavigate }) {
 
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <span>Sign In to Workspace</span>
-                <ArrowRight className="w-4 h-4" />
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Verifying Credentials...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign In to Workspace</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
 
               <div className="relative my-6 text-center">
@@ -94,7 +126,7 @@ export default function LoginPage({ onNavigate }) {
 
               <button
                 type="button"
-                onClick={() => setLoggedIn(true)}
+                onClick={() => setFormError('Web3 signature authentication will be activated in Phase 11.')}
                 className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-semibold transition-all flex items-center justify-center gap-2"
               >
                 <Wallet className="w-4 h-4 text-cyan-400" />
