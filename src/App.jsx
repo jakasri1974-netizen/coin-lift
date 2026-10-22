@@ -7,18 +7,35 @@ import ProjectsPage from './pages/ProjectsPage';
 import CampaignsPage from './pages/CampaignsPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import DashboardPage from './pages/DashboardPage';
-import MessagesPage from './pages/MessagesPage';
-import AgreementsPage from './pages/AgreementsPage';
-import CampaignAnalyticsPage from './pages/CampaignAnalyticsPage';
-import CreatorAnalyticsPage from './pages/CreatorAnalyticsPage';
 import ProjectModal from './components/Modals/ProjectModal';
 import CreatorModal from './components/Modals/CreatorModal';
-import { useAuth } from './context/AuthContext';
-import { Loader2 } from 'lucide-react';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
+
+// Creator Phase 5 Imports
+import CreatorProfileDashboard from './pages/CreatorProfileDashboard';
+import PublicCreatorProfilePage from './pages/PublicCreatorProfilePage';
+
+// Project Owner Phase 6 Imports
+import ProjectProfileDashboard from './pages/ProjectProfileDashboard';
+import PublicProjectProfilePage from './pages/PublicProjectProfilePage';
+
+// Phase 9 Collaboration Import
+import CollaborationWorkspacePage from './pages/CollaborationWorkspacePage';
+
+// Admin Portal Imports
+import AdminLoginPage from './admin/pages/AdminLoginPage';
+import AdminProtectedRoute from './admin/components/AdminProtectedRoute';
+import AdminLayout from './admin/components/AdminLayout';
+import AdminDashboardPage from './admin/pages/AdminDashboardPage';
+import AdminUsersPage from './admin/pages/AdminUsersPage';
+import AdminCreatorsPage from './admin/pages/AdminCreatorsPage';
+import AdminProjectsPage from './admin/pages/AdminProjectsPage';
+import AdminCampaignsPage from './admin/pages/AdminCampaignsPage';
+import AdminLogsPage from './admin/pages/AdminLogsPage';
+import AdminAgreementsPage from './admin/pages/AdminAgreementsPage';
 
 export default function App() {
-  const { user, isAuthenticated, loading } = useAuth();
   const [currentPath, setCurrentPath] = useState(window.location.pathname || '/');
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedCreator, setSelectedCreator] = useState(null);
@@ -45,63 +62,83 @@ export default function App() {
     }
   };
 
-  // Redirect authenticated user away from auth pages (/login, /signup) to /dashboard
-  useEffect(() => {
-    if (isAuthenticated && (currentPath === '/login' || currentPath === '/signup')) {
-      handleNavigate('/dashboard');
-    }
-  }, [isAuthenticated, currentPath]);
+  const isAdminRoute = currentPath.startsWith('/admin');
 
-  // Protect dashboard, messages, agreements, and analytics routes for unauthenticated users
-  useEffect(() => {
-    if (!loading && !isAuthenticated && (
-      currentPath === '/dashboard' ||
-      currentPath === '/messages' ||
-      currentPath === '/agreements' ||
-      currentPath.startsWith('/analytics') ||
-      currentPath.includes('/analytics') ||
-      currentPath === '/creator-dashboard' ||
-      currentPath === '/project-dashboard'
-    )) {
-      handleNavigate('/login');
+  const renderAdminView = () => {
+    if (currentPath === '/admin/login') {
+      return <AdminLoginPage onNavigate={handleNavigate} />;
     }
-  }, [isAuthenticated, loading, currentPath]);
 
-  if (loading) {
+    let AdminViewComponent = AdminDashboardPage;
+    if (currentPath === '/admin/users') AdminViewComponent = AdminUsersPage;
+    if (currentPath === '/admin/creators') AdminViewComponent = AdminCreatorsPage;
+    if (currentPath === '/admin/projects') AdminViewComponent = AdminProjectsPage;
+    if (currentPath === '/admin/campaigns') AdminViewComponent = AdminCampaignsPage;
+    if (currentPath === '/admin/agreements') AdminViewComponent = AdminAgreementsPage;
+    if (currentPath === '/admin/logs') AdminViewComponent = AdminLogsPage;
+
     return (
-      <div className="bg-[#FAF8FF] min-h-screen flex flex-col items-center justify-center">
-        <Loader2 className="w-10 h-10 text-purple-600 animate-spin mb-3" />
-        <p className="text-xs font-semibold text-purple-900 tracking-wide uppercase">Initializing CrypLift Workspace...</p>
-      </div>
+      <AdminProtectedRoute onNavigate={handleNavigate}>
+        <AdminLayout currentAdminPath={currentPath} onNavigate={handleNavigate}>
+          <AdminViewComponent onNavigate={handleNavigate} />
+        </AdminLayout>
+      </AdminProtectedRoute>
     );
-  }
+  };
 
-  const renderPage = () => {
-    const basePath = currentPath.split('?')[0];
-
-    if (basePath.startsWith('/campaigns/') && basePath.endsWith('/analytics')) {
-      return <CampaignAnalyticsPage onNavigate={handleNavigate} />;
+  const renderPublicPage = () => {
+    // Check dynamic /creators/:id route
+    if (currentPath.startsWith('/creators/') && currentPath !== '/creators/') {
+      const id = currentPath.replace('/creators/', '');
+      return (
+        <PublicCreatorProfilePage
+          creatorId={id}
+          onNavigate={handleNavigate}
+          onInviteCreator={setSelectedCreator}
+        />
+      );
     }
 
-    switch (basePath) {
+    // Check dynamic /projects/:id route
+    if (currentPath.startsWith('/projects/') && currentPath !== '/projects/') {
+      const id = currentPath.replace('/projects/', '');
+      return (
+        <PublicProjectProfilePage
+          projectId={id}
+          onNavigate={handleNavigate}
+        />
+      );
+    }
+
+    // Check dynamic /collaborations/:id route (Phase 9 Workspace)
+    if (currentPath.startsWith('/collaborations/') && currentPath !== '/collaborations/') {
+      const id = currentPath.replace('/collaborations/', '');
+      return (
+        <ProtectedRoute allowedRoles={['CREATOR', 'PROJECT_OWNER', 'ADMIN']} onNavigate={handleNavigate}>
+          <CollaborationWorkspacePage collaborationId={id} onNavigate={handleNavigate} />
+        </ProtectedRoute>
+      );
+    }
+
+    switch (currentPath) {
+      case '/creator/profile':
+        return (
+          <ProtectedRoute allowedRoles={['CREATOR']} onNavigate={handleNavigate}>
+            <CreatorProfileDashboard onNavigate={handleNavigate} />
+          </ProtectedRoute>
+        );
+      case '/project/profile':
+        return (
+          <ProtectedRoute allowedRoles={['PROJECT_OWNER']} onNavigate={handleNavigate}>
+            <ProjectProfileDashboard onNavigate={handleNavigate} />
+          </ProtectedRoute>
+        );
       case '/creators':
         return <CreatorsPage onSelectCreator={setSelectedCreator} onNavigate={handleNavigate} />;
       case '/projects':
         return <ProjectsPage onSelectProject={setSelectedProject} onNavigate={handleNavigate} />;
       case '/campaigns':
         return <CampaignsPage onSelectProject={setSelectedProject} onNavigate={handleNavigate} />;
-      case '/dashboard':
-        return <DashboardPage onNavigate={handleNavigate} />;
-      case '/messages':
-        return <MessagesPage onNavigate={handleNavigate} />;
-      case '/agreements':
-        return <AgreementsPage onNavigate={handleNavigate} />;
-      case '/analytics/creator':
-        return <CreatorAnalyticsPage onNavigate={handleNavigate} />;
-      case '/creator-dashboard':
-        return <DashboardPage onNavigate={handleNavigate} targetRoleFilter="creator" />;
-      case '/project-dashboard':
-        return <DashboardPage onNavigate={handleNavigate} targetRoleFilter="project" />;
       case '/login':
         return <LoginPage onNavigate={handleNavigate} />;
       case '/signup':
@@ -119,40 +156,46 @@ export default function App() {
   };
 
   return (
-    <div className="bg-[#FAF8FF] text-slate-900 font-sans min-h-screen flex flex-col justify-between selection:bg-purple-500/20 selection:text-purple-700">
-      
-      {/* 1. Navbar (Sticky header across all routes) */}
-      <Navbar currentPath={currentPath} onNavigate={handleNavigate} />
+    <AuthProvider>
+      {isAdminRoute ? (
+        renderAdminView()
+      ) : (
+        <div className="bg-[#04060d] text-slate-100 font-sans min-h-screen flex flex-col justify-between selection:bg-cyan-500/30 selection:text-cyan-300">
 
-      {/* Main Page View */}
-      <div className="flex-1">
-        {renderPage()}
-      </div>
+          {/* Public Navbar */}
+          <Navbar currentPath={currentPath} onNavigate={handleNavigate} />
 
-      {/* 13. Footer */}
-      <Footer onNavigate={handleNavigate} />
+          {/* Main Public Page View */}
+          <div className="flex-1">
+            {renderPublicPage()}
+          </div>
 
-      {/* Modals */}
-      {selectedProject && (
-        <ProjectModal
-          project={selectedProject}
-          onClose={() => setSelectedProject(null)}
-          onApply={(project) => {
-            console.log('Applied for project campaign:', project);
-          }}
-        />
+          {/* Public Footer */}
+          <Footer onNavigate={handleNavigate} />
+
+          {/* Public Detail Modals */}
+          {selectedProject && (
+            <ProjectModal
+              project={selectedProject}
+              onClose={() => setSelectedProject(null)}
+              onApply={(project) => {
+                console.log('Applied for project campaign:', project);
+              }}
+            />
+          )}
+
+          {selectedCreator && (
+            <CreatorModal
+              creator={selectedCreator}
+              onClose={() => setSelectedCreator(null)}
+              onInvite={(creator) => {
+                console.log('Invited creator to campaign:', creator);
+              }}
+            />
+          )}
+
+        </div>
       )}
-
-      {selectedCreator && (
-        <CreatorModal
-          creator={selectedCreator}
-          onClose={() => setSelectedCreator(null)}
-          onInvite={(creator) => {
-            console.log('Invited creator to campaign:', creator);
-          }}
-        />
-      )}
-
-    </div>
+    </AuthProvider>
   );
 }

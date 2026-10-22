@@ -1,54 +1,76 @@
 import React, { useState, useEffect } from 'react';
-import { projectsService } from '../services/api';
-import { Search, Filter, Layers, Sparkles, ArrowUpRight, Plus, CheckCircle2, Loader2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { apiRequest } from '../utils/api';
+import { Search, Sparkles, ArrowUpRight, Layers, Coins, CheckCircle2, Loader2, Building2, AlertCircle, X } from 'lucide-react';
 
 export default function ProjectsPage({ onSelectProject, onNavigate }) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
-  // Search & Filters
+  // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedNetwork, setSelectedNetwork] = useState('All');
-  const [selectedStage, setSelectedStage] = useState('All');
+  const [selectedProjectType, setSelectedProjectType] = useState('All');
 
-  // Pagination State
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const categories = [
+    'All',
+    'DeFi',
+    'GameFi',
+    'Layer 1',
+    'Layer 2',
+    'AI',
+    'Infrastructure',
+    'Wallet',
+    'NFT',
+    'DAO',
+    'Web3 SaaS',
+    'Developer Tools',
+    'SocialFi',
+  ];
 
-  const categories = ['All', 'Infrastructure', 'Cross-Chain', 'NFT', 'DeAI', 'Gaming', 'DeFi'];
-  const networks = ['All', 'Ethereum', 'Solana', 'Polygon', 'Arbitrum', 'Optimism', 'BNB Chain'];
-  const stages = ['All', 'Mainnet', 'Testnet', 'Alpha', 'Beta'];
+  const networks = [
+    'All',
+    'Ethereum',
+    'Solana',
+    'Arbitrum',
+    'Polygon',
+    'Multi-chain',
+    'BNB Chain',
+    'Avalanche',
+    'Base',
+    'Sui',
+    'Near',
+  ];
+
+  const projectTypes = [
+    'All',
+    'Protocol',
+    'dApp',
+    'Infrastructure',
+    'Layer 1 Blockchain',
+    'Layer 2 Scaling',
+    'Utility Token',
+    'DAO Governance',
+  ];
 
   const fetchProjects = async () => {
     setLoading(true);
-    setError('');
+    setError(null);
     try {
-      const queryFilters = {
-        page,
-        limit: 12
-      };
+      const queryParams = new URLSearchParams();
+      if (searchTerm) queryParams.append('search', searchTerm);
+      if (selectedCategory !== 'All') queryParams.append('category', selectedCategory);
+      if (selectedNetwork !== 'All') queryParams.append('network', selectedNetwork);
+      if (selectedProjectType !== 'All') queryParams.append('projectType', selectedProjectType);
 
-      if (searchTerm.trim()) queryFilters.search = searchTerm.trim();
-      if (selectedCategory !== 'All') queryFilters.category = selectedCategory;
-      if (selectedNetwork !== 'All') queryFilters.network = selectedNetwork;
-      if (selectedStage !== 'All') queryFilters.projectStage = selectedStage;
-
-      const res = await projectsService.getAll(queryFilters);
-      if (res.success) {
-        setProjects(res.data || []);
-        if (res.pagination) {
-          setTotalPages(res.pagination.totalPages || 1);
-        } else {
-          setTotalPages(1);
-        }
-      } else {
-        throw new Error(res.message || 'Failed to fetch projects');
+      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+      const res = await apiRequest(`/projects${queryString}`);
+      if (res.success && res.data) {
+        setProjects(res.data);
       }
     } catch (err) {
-      console.error('[Fetch Projects Error]', err);
-      setError('Unable to connect to CrypLift. Please try again.');
+      setError(err.message || 'Failed to load approved projects discovery list');
     } finally {
       setLoading(false);
     }
@@ -56,234 +78,228 @@ export default function ProjectsPage({ onSelectProject, onNavigate }) {
 
   useEffect(() => {
     fetchProjects();
-  }, [searchTerm, selectedCategory, selectedNetwork, selectedStage, page]);
+  }, [selectedCategory, selectedNetwork, selectedProjectType]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    fetchProjects();
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('All');
+    setSelectedNetwork('All');
+    setSelectedProjectType('All');
+  };
 
   return (
-    <div className="pt-32 pb-20 bg-[#FAF8FF] min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="pt-28 pb-20 bg-[#05070e] min-h-screen font-sans text-slate-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-100 border border-purple-200 text-purple-700 text-xs font-bold mb-4 shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-              <span>Token Projects Directory</span>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-semibold mb-4">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Verified Web3 Projects Directory</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight mb-2 font-sans">
-              Emerging Web3 <span className="text-gradient-purple">Ecosystems</span>
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-2">
+              Emerging Web3 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Ecosystems</span>
             </h1>
-            <p className="text-slate-600 text-base sm:text-lg max-w-2xl font-medium">
-              Discover verified token projects actively looking for creator-led content, community reach, and marketing campaigns.
+            <p className="text-slate-300 text-base sm:text-lg max-w-2xl">
+              Explore verified Web3 protocols, token projects, and decentralized infrastructure approved for public creator partnerships.
             </p>
           </div>
 
           <button
-            onClick={() => onNavigate('/dashboard')}
-            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-500 text-white font-extrabold text-xs shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-0.5 transition-all flex items-center gap-2 self-start md:self-auto"
+            onClick={() => onNavigate ? onNavigate('/project/profile') : window.location.href = '/project/profile'}
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold text-xs shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2 self-start md:self-auto shrink-0"
           >
-            <Plus className="w-4 h-4" />
-            <span>Manage Project Profile</span>
+            <Building2 className="w-4 h-4" />
+            <span>Manage / List Your Project</span>
           </button>
         </div>
 
-        {/* Search & Filter Bar */}
-        <div className="saas-card p-6 rounded-3xl mb-10 space-y-4 shadow-lg border border-purple-100 bg-white">
-          <div className="flex flex-col md:flex-row items-center gap-4">
+        {/* Filter Bar */}
+        <div className="bg-[#0b0f19] p-6 rounded-3xl border border-white/10 space-y-4 shadow-xl">
+
+          <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">
               <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
               <input
                 type="text"
-                placeholder="Search projects by name, description, category, or network..."
+                placeholder="Search approved projects by name, description, category, or network..."
                 value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-                className="w-full bg-purple-50/50 text-sm text-slate-900 pl-11 pr-4 py-3 rounded-2xl border border-purple-200 focus:outline-none focus:border-purple-600 font-medium"
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-[#05070e] text-xs text-white pl-11 pr-4 py-3 rounded-xl border border-white/10 focus:outline-none focus:border-cyan-500"
               />
             </div>
+            <button
+              type="submit"
+              className="w-full md:w-auto px-6 py-3 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold text-xs rounded-xl hover:bg-cyan-500/30 transition-all"
+            >
+              Search
+            </button>
+          </form>
 
-            <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
-              <select
-                value={selectedCategory}
-                onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}
-                className="bg-white text-xs font-bold text-slate-800 border border-purple-200 rounded-2xl px-3 py-3 focus:outline-none focus:border-purple-600 shadow-2xs"
-              >
-                {categories.map((c) => (
-                  <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>
-                ))}
-              </select>
+          {/* Filter Dropdowns & Tags */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-white/5">
 
-              <select
-                value={selectedNetwork}
-                onChange={(e) => { setSelectedNetwork(e.target.value); setPage(1); }}
-                className="bg-white text-xs font-bold text-slate-800 border border-purple-200 rounded-2xl px-3 py-3 focus:outline-none focus:border-purple-600 shadow-2xs"
-              >
-                {networks.map((n) => (
-                  <option key={n} value={n}>{n === 'All' ? 'All Networks' : n}</option>
-                ))}
-              </select>
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-slate-400">Category:</span>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="bg-[#05070e] text-xs text-white border border-white/10 rounded-xl px-3 py-2 focus:outline-none focus:border-cyan-500"
+                >
+                  {categories.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
 
-              <select
-                value={selectedStage}
-                onChange={(e) => { setSelectedStage(e.target.value); setPage(1); }}
-                className="bg-white text-xs font-bold text-slate-800 border border-purple-200 rounded-2xl px-3 py-3 focus:outline-none focus:border-purple-600 shadow-2xs"
-              >
-                {stages.map((st) => (
-                  <option key={st} value={st}>{st === 'All' ? 'All Stages' : st}</option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-slate-400">Network:</span>
+                <select
+                  value={selectedNetwork}
+                  onChange={(e) => setSelectedNetwork(e.target.value)}
+                  className="bg-[#05070e] text-xs text-white border border-white/10 rounded-xl px-3 py-2 focus:outline-none focus:border-cyan-500"
+                >
+                  {networks.map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-slate-400">Type:</span>
+                <select
+                  value={selectedProjectType}
+                  onChange={(e) => setSelectedProjectType(e.target.value)}
+                  className="bg-[#05070e] text-xs text-white border border-white/10 rounded-xl px-3 py-2 focus:outline-none focus:border-cyan-500"
+                >
+                  {projectTypes.map((pt) => (
+                    <option key={pt} value={pt}>{pt}</option>
+                  ))}
+                </select>
+              </div>
             </div>
+
+            {(selectedCategory !== 'All' || selectedNetwork !== 'All' || selectedProjectType !== 'All' || searchTerm) && (
+              <button
+                onClick={handleClearFilters}
+                className="text-xs font-mono text-amber-400 hover:text-amber-300 flex items-center gap-1"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Clear Filters</span>
+              </button>
+            )}
+
           </div>
+
         </div>
 
-        {/* Loading / Error / Empty States */}
+        {/* Error Alert */}
+        {error && (
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Projects Grid */}
         {loading ? (
           <div className="py-20 text-center space-y-4">
-            <Loader2 className="w-10 h-10 text-purple-600 animate-spin mx-auto" />
-            <p className="text-sm font-bold text-slate-600">Loading project profiles from database...</p>
+            <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mx-auto" />
+            <p className="text-xs font-mono text-slate-400">Fetching verified project profiles...</p>
           </div>
-        ) : error ? (
-          <div className="py-16 text-center max-w-md mx-auto p-8 rounded-3xl bg-red-50 border border-red-200 space-y-4">
-            <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
-            <h3 className="text-base font-extrabold text-slate-900">{error}</h3>
-            <button
-              onClick={fetchProjects}
-              className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-700 transition-all"
-            >
-              Try Again
-            </button>
-          </div>
-        ) : projects.length === 0 ? (
-          <div className="py-20 text-center max-w-md mx-auto p-8 rounded-3xl bg-white border border-purple-100 shadow-sm space-y-4">
-            <Layers className="w-12 h-12 text-purple-300 mx-auto" />
-            <h3 className="text-lg font-extrabold text-slate-900">No project profiles found</h3>
-            <p className="text-xs text-slate-500 font-medium">Try adjusting your search parameters or resetting active filters.</p>
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedCategory('All');
-                setSelectedNetwork('All');
-                setSelectedStage('All');
-                setPage(1);
-              }}
-              className="px-5 py-2.5 rounded-xl bg-purple-100 text-purple-800 font-extrabold text-xs hover:bg-purple-200 transition-all"
-            >
-              Reset Filters
-            </button>
+        ) : projects.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map((project) => (
+              <div
+                key={project.id}
+                className="group relative rounded-3xl bg-[#090e1a] p-6 border border-white/10 hover:border-cyan-500/40 transition-all duration-300 shadow-xl hover:shadow-cyan-500/10 flex flex-col justify-between"
+              >
+                <div>
+
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 text-cyan-300 flex items-center justify-center font-bold text-lg border border-cyan-500/30 overflow-hidden shrink-0">
+                        {project.logo ? (
+                          <img src={project.logo} alt={project.name} className="w-full h-full object-cover" />
+                        ) : (
+                          project.name?.charAt(0) || 'P'
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="text-base font-bold text-white font-sans group-hover:text-cyan-400 transition-colors">{project.name}</h3>
+                          {project.verified && (
+                            <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" title="Verified Project" />
+                          )}
+                        </div>
+                        <span className="text-[11px] text-cyan-400 font-mono block">{project.tagline || project.category}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-300 leading-relaxed mb-6 line-clamp-3">
+                    {project.description}
+                  </p>
+
+                  {/* Badges */}
+                  <div className="flex flex-wrap items-center gap-1.5 mb-6">
+                    <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                      {project.category}
+                    </span>
+                    {project.network && (
+                      <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                        {project.network}
+                      </span>
+                    )}
+                    {project.tokenSymbol && (
+                      <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                        ${project.tokenSymbol}
+                      </span>
+                    )}
+                  </div>
+
+                </div>
+
+                <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+                  <span className="text-[10px] font-mono text-slate-400">Verified Ecosystem</span>
+                  <button
+                    onClick={() => {
+                      if (onSelectProject) onSelectProject(project);
+                      if (onNavigate) onNavigate(`/projects/${project.id}`);
+                      else window.location.href = `/projects/${project.id}`;
+                    }}
+                    className="px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-bold text-xs transition-colors flex items-center gap-1"
+                  >
+                    <span>View Profile</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-cyan-400" />
+                  </button>
+                </div>
+
+              </div>
+            ))}
           </div>
         ) : (
-          /* Project Cards Grid */
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-              {projects.map((project) => {
-                const name = project.projectName || project.user?.name || 'Untitled Web3 Project';
-                const initial = name.charAt(0).toUpperCase();
-                const category = project.category || 'Infrastructure';
-                const description = project.description || 'Verified Web3 token project looking for content collaborations.';
-                const network = project.network || 'Ethereum';
-                const tokenSymbol = project.tokenSymbol || 'TOKEN';
-                const stage = project.projectStage || 'Mainnet';
-
-                return (
-                  <div
-                    key={project._id || project.id}
-                    className="group relative rounded-3xl saas-card p-7 saas-card-hover flex flex-col justify-between border border-purple-100 hover:border-purple-400 bg-white"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3.5">
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center text-white font-black text-lg shadow-md">
-                            {initial}
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-extrabold text-slate-900 font-sans group-hover:text-purple-700 transition-colors">{name}</h3>
-                            <span className="text-xs text-purple-600 font-mono font-semibold">{category}</span>
-                          </div>
-                        </div>
-
-                        <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 font-mono">
-                          {tokenSymbol}
-                        </span>
-                      </div>
-
-                      <p className="text-xs text-slate-600 leading-relaxed mb-6 font-medium line-clamp-2">
-                        {description}
-                      </p>
-
-                      <div className="space-y-2 mb-6 bg-purple-50/60 p-3.5 rounded-2xl border border-purple-100">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-500 font-medium">Blockchain Network:</span>
-                          <span className="font-extrabold text-slate-900 font-mono">{network}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-500 font-medium">Project Stage:</span>
-                          <span className="font-extrabold text-purple-700 font-mono">{stage}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1.5 mb-6">
-                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-white text-slate-700 border border-purple-100 shadow-2xs">
-                          {network}
-                        </span>
-                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-white text-slate-700 border border-purple-100 shadow-2xs">
-                          {stage}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-purple-100 flex items-center justify-between">
-                      <span className="text-[11px] text-purple-700 font-bold">{tokenSymbol} Project</span>
-                      <button
-                        onClick={() => onSelectProject({
-                          id: project._id,
-                          _id: project._id,
-                          name,
-                          category,
-                          description,
-                          symbol: tokenSymbol,
-                          network,
-                          communitySize: '50K+ Audience',
-                          budget: '1,000 - 5,000 USDC',
-                          compatibility: 95,
-                          deliverables: ['1x Video Review', '2x Tweet Threads'],
-                          tags: [category, network, stage],
-                          logoColor: 'from-purple-600 to-indigo-600'
-                        })}
-                        className="px-4 py-2 rounded-xl bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-700 font-extrabold text-xs transition-all flex items-center gap-1 border border-purple-200"
-                      >
-                        <span>View Details</span>
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-3 pt-6 border-t border-purple-100">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  className="px-4 py-2 rounded-xl bg-white border border-purple-200 text-slate-700 text-xs font-bold hover:bg-purple-50 disabled:opacity-40 flex items-center gap-1"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span>Previous</span>
-                </button>
-                <span className="text-xs font-bold text-slate-600 font-mono">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  className="px-4 py-2 rounded-xl bg-white border border-purple-200 text-slate-700 text-xs font-bold hover:bg-purple-50 disabled:opacity-40 flex items-center gap-1"
-                >
-                  <span>Next</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </>
+          <div className="py-20 text-center bg-[#090e1a] rounded-3xl border border-white/10 space-y-4 max-w-xl mx-auto p-8 shadow-2xl">
+            <Building2 className="w-12 h-12 text-slate-500 mx-auto" />
+            <h3 className="text-lg font-bold text-white">No approved projects found</h3>
+            <p className="text-xs text-slate-400">
+              No verified project profiles match your selected filters. Try changing or clearing your search options.
+            </p>
+            <button
+              onClick={handleClearFilters}
+              className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition-all"
+            >
+              Clear All Filters
+            </button>
+          </div>
         )}
 
       </div>
