@@ -185,7 +185,7 @@ export const adminService = {
       updateData.rejectionReason = null;
     } else if (approvalStatus === 'REJECTED') {
       updateData.verified = false;
-      updateData.rejectionReason = rejectionReason || 'Profile submission did not meet minimum CoinLift community guidelines.';
+      updateData.rejectionReason = rejectionReason || 'Profile submission did not meet minimum CrypLift community guidelines.';
     }
 
     const creator = await prisma.creatorProfile.update({

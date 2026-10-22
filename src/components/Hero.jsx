@@ -43,7 +43,7 @@ export default function Hero({ onNavigate }) {
 
             {/* Supporting Text */}
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed mb-8 max-w-xl">
-              <strong className="text-white font-semibold">COINLIFT</strong> connects emerging token projects with trusted content creators, making creator-led collaboration simple, transparent, and scalable.
+              <strong className="text-white font-semibold">CRYPLIFT</strong> connects emerging token projects with trusted content creators, making creator-led collaboration simple, transparent, and scalable.
             </p>
 
             {/* Primary & Secondary Action CTAs */}
@@ -95,7 +95,7 @@ export default function Hero({ onNavigate }) {
                     <div className="w-3 h-3 rounded-full bg-red-500/80" />
                     <div className="w-3 h-3 rounded-full bg-amber-500/80" />
                     <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                    <span className="text-xs text-slate-400 font-mono ml-2">coinlift.flow // live-matching</span>
+                    <span className="text-xs text-slate-400 font-mono ml-2">cryplift.flow // live-matching</span>
                   </div>
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-semibold">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -126,14 +126,14 @@ export default function Hero({ onNavigate }) {
                     </div>
                   </div>
 
-                  {/* Node 2: COINLIFT Matching Hub */}
+                  {/* Node 2: CRYPLIFT Matching Hub */}
                   <div className={`relative z-10 flex items-center gap-4 p-3.5 rounded-xl transition-all duration-300 ${pulseNode === 1 ? 'bg-blue-500/15 border border-blue-500/40 shadow-lg shadow-blue-500/10' : 'bg-white/[0.03] border border-white/5'}`}>
                     <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shrink-0 shadow-md">
                       <Zap className="w-5 h-5 text-white animate-pulse" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-blue-300 uppercase tracking-wider">Step 02 — COINLIFT Platform</span>
+                        <span className="text-xs font-bold text-blue-300 uppercase tracking-wider">Step 02 — CRYPLIFT Platform</span>
                         <span className="text-[10px] font-mono text-cyan-400">AI Match 98%</span>
                       </div>
                       <p className="text-sm font-semibold text-white truncate">Smart Campaign Requirements & Escrow</p>

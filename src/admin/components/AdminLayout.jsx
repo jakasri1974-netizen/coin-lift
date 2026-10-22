@@ -45,7 +45,7 @@ export default function AdminLayout({ currentAdminPath, onNavigate, children }) 
             </div>
             <div>
               <span className="font-extrabold text-base text-white tracking-tight block leading-none font-sans">
-                COIN<span className="text-cyan-400">LIFT</span>
+                CRYP<span className="text-cyan-400">LIFT</span>
               </span>
               <span className="text-[10px] font-mono text-slate-400">Admin Control Panel</span>
             </div>

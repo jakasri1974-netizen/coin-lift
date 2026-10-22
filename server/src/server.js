@@ -12,7 +12,7 @@ async function startServer() {
     // Start Express HTTP Server
     const server = app.listen(PORT, async () => {
       console.log(`==================================================`);
-      console.log(`🚀 CoinLift Backend Server running on port ${PORT}`);
+      console.log(`🚀 CrypLift Backend Server running on port ${PORT}`);
       console.log(`🌐 Health Check: http://localhost:${PORT}/api/health`);
       console.log(`==================================================`);
 
@@ -39,7 +39,7 @@ async function startServer() {
     process.on('SIGTERM', () => shutdown('SIGTERM'));
     process.on('SIGINT', () => shutdown('SIGINT'));
   } catch (error) {
-    console.error('Failed to start CoinLift backend server:', error);
+    console.error('Failed to start CrypLift backend server:', error);
     process.exit(1);
   }
 }

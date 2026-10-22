@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { ShieldAlert, Loader2 } from 'lucide-react';
 
 export default function AdminProtectedRoute({ children, onNavigate }) {
   const { user, loading, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      onNavigate('/admin/login');
+    }
+  }, [loading, isAuthenticated, onNavigate]);
 
   if (loading) {
     return (
@@ -17,7 +23,6 @@ export default function AdminProtectedRoute({ children, onNavigate }) {
   }
 
   if (!isAuthenticated) {
-    onNavigate('/admin/login');
     return null;
   }
 
@@ -28,7 +33,7 @@ export default function AdminProtectedRoute({ children, onNavigate }) {
           <ShieldAlert className="w-12 h-12 text-red-400 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-white mb-2 font-sans">Unauthorized Admin Access</h3>
           <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-            Your account role (<strong className="text-white font-mono">{user.role}</strong>) does not have authorization to enter the CoinLift Administration Portal.
+            Your account role (<strong className="text-white font-mono">{user.role}</strong>) does not have authorization to enter the CrypLift Administration Portal.
           </p>
           <button
             onClick={() => onNavigate('/')}

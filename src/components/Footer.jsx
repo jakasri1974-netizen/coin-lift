@@ -54,7 +54,7 @@ export default function Footer({ onNavigate }) {
                 <ArrowUpRight className="w-4 h-4 text-cyan-200" />
               </div>
               <span className="font-extrabold text-xl tracking-tight text-white font-sans">
-                COIN<span className="text-cyan-400">LIFT</span>
+                CRYP<span className="text-cyan-400">LIFT</span>
               </span>
             </div>
 
@@ -142,7 +142,7 @@ export default function Footer({ onNavigate }) {
 
         {/* Bottom Bar & Copyright */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-[11px]">
-          <p>© 2026 COINLIFT. All rights reserved.</p>
+          <p>© 2026 CRYPLIFT. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />

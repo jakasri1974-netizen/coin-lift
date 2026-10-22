@@ -709,7 +709,7 @@ export default function ProjectProfileDashboard({ onNavigate }) {
                   Your project is publicly visible!
                 </p>
                 <p className="text-[11px] text-emerald-400/80">
-                  Your project profile is verified and active on the CoinLift platform ecosystem.
+                  Your project profile is verified and active on the CrypLift platform ecosystem.
                 </p>
               </div>
             )}

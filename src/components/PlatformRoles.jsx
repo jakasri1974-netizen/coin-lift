@@ -39,7 +39,7 @@ export default function PlatformRoles({ onNavigate }) {
             Designed For Both <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400">Projects & Creators</span>
           </h2>
           <p className="text-slate-300 text-base sm:text-lg">
-            Whether you are launching an emerging token project or building a dedicated Web3 audience, COINLIFT provides the tools you need to succeed.
+            Whether you are launching an emerging token project or building a dedicated Web3 audience, CRYPLIFT provides the tools you need to succeed.
           </p>
         </div>
 

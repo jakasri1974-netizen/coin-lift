@@ -41,7 +41,7 @@ export default function AdminLoginPage({ onNavigate }) {
               <Shield className="w-7 h-7" />
             </div>
             <span className="text-[10px] font-mono uppercase tracking-widest text-cyan-400 font-bold bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/20 mb-2">
-              CoinLift Admin Portal
+              CrypLift Admin Portal
             </span>
             <h2 className="text-2xl font-extrabold text-white font-sans">
               Secure Administration
@@ -67,7 +67,7 @@ export default function AdminLoginPage({ onNavigate }) {
                 <input
                   type="email"
                   required
-                  placeholder="admin@coinlift.com"
+                  placeholder="admin@cryplift.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-[#050811] text-xs text-white pl-10 pr-4 py-3.5 rounded-xl border border-white/10 focus:outline-none focus:border-cyan-500 font-mono"

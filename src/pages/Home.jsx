@@ -20,7 +20,7 @@ export default function Home({ onNavigate, onSelectProject, onSelectCreator }) {
       {/* 3. Trust / Platform Stats */}
       <Stats />
 
-      {/* 4. How COINLIFT Works */}
+      {/* 4. How CRYPLIFT Works */}
       <HowItWorks />
 
       {/* 5. Two-Sided Platform Section */}
@@ -38,7 +38,7 @@ export default function Home({ onNavigate, onSelectProject, onSelectCreator }) {
       {/* 9. Transparency / Trust Section */}
       <TrustSection />
 
-      {/* 10. Why COINLIFT Section */}
+      {/* 10. Why CRYPLIFT Section */}
       <WhyCoinLift />
 
       {/* 11. Collaboration Flow Visual */}

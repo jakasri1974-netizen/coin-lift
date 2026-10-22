@@ -339,7 +339,7 @@ export default function CreatorProfileDashboard({ onNavigate }) {
                 </h3>
                 <p className="text-xs opacity-90 mt-0.5 leading-relaxed">
                   {profile.approvalStatus === 'APPROVED'
-                    ? 'Your profile is verified and publicly discoverable on the CoinLift marketplace.'
+                    ? 'Your profile is verified and publicly discoverable on the CrypLift marketplace.'
                     : profile.approvalStatus === 'REJECTED'
                     ? profile.rejectionReason
                       ? `Rejection Reason: ${profile.rejectionReason}`
@@ -364,7 +364,7 @@ export default function CreatorProfileDashboard({ onNavigate }) {
           <div className="p-5 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-200 flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold font-sans">Initialize Your Creator Profile</h3>
-              <p className="text-xs text-slate-300 mt-0.5">Complete your details below to activate your creator portfolio on CoinLift.</p>
+              <p className="text-xs text-slate-300 mt-0.5">Complete your details below to activate your creator portfolio on CrypLift.</p>
             </div>
           </div>
         )}

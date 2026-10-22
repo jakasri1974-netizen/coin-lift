@@ -19,7 +19,7 @@ export default function CTASection({ onNavigate }) {
             {/* Pill Badge */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-semibold mb-6">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Join the COINLIFT Marketplace Today</span>
+              <span>Join the CRYPLIFT Marketplace Today</span>
             </div>
 
             {/* Headline */}

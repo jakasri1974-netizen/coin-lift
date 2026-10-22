@@ -36,7 +36,7 @@ export default function HowItWorks() {
       number: '04',
       title: 'Track',
       shortDesc: 'Campaign activity, engagement and collaboration metrics can be monitored through the platform.',
-      detailedDesc: 'Monitor real-time engagement, impression count, click-through rates, and community growth through the unified COINLIFT dashboard.',
+      detailedDesc: 'Monitor real-time engagement, impression count, click-through rates, and community growth through the unified CRYPLIFT dashboard.',
       icon: LineChart,
       tag: 'Analytics & Insights',
       features: ['Real-time dashboard', 'Engagement verification', 'Campaign ROI insights']
@@ -58,7 +58,7 @@ export default function HowItWorks() {
             <span>Structured Workflow</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-4 font-sans">
-            How <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">COINLIFT</span> Works
+            How <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">CRYPLIFT</span> Works
           </h2>
           <p className="text-slate-300 text-base sm:text-lg">
             A transparent four-step process built to make Web3 creator collaborations effortless, structured, and measurable.

@@ -288,13 +288,51 @@ export const agreementService = {
 
     const nextVersion = agreement.status === 'REJECTED' ? agreement.version + 1 : agreement.version;
 
-    return prisma.agreement.update({
-      where: { id: agreementId },
+    // Atomic conditional update predicated on agreement ID, expected status, and expected version
+    const updateResult = await prisma.agreement.updateMany({
+      where: {
+        id: agreementId,
+        status: agreement.status,
+        version: agreement.version,
+      },
       data: {
         status: 'PENDING_ACCEPTANCE',
         version: nextVersion,
         rejectionReason: null, // Clear rejection reason on revision resubmit
       },
+    });
+
+    if (updateResult.count === 0) {
+      const latest = await prisma.agreement.findUnique({
+        where: { id: agreementId },
+        select: { status: true, version: true },
+      });
+
+      if (!latest) {
+        const error = new Error('Agreement not found');
+        error.statusCode = 404;
+        throw error;
+      }
+      if (latest.status === 'ACCEPTED') {
+        const error = new Error('Agreement has already been accepted and cannot be resubmitted');
+        error.statusCode = 409;
+        error.code = 'STATE_CONFLICT';
+        throw error;
+      }
+      if (latest.status === 'PENDING_ACCEPTANCE') {
+        const error = new Error('Agreement is already pending Creator acceptance');
+        error.statusCode = 409;
+        error.code = 'STATE_CONFLICT';
+        throw error;
+      }
+      const error = new Error(`Cannot submit agreement: state conflict detected (current status: ${latest.status})`);
+      error.statusCode = 409;
+      error.code = 'STATE_CONFLICT';
+      throw error;
+    }
+
+    return prisma.agreement.findUnique({
+      where: { id: agreementId },
       include: {
         project: { select: { id: true, name: true, logo: true, userId: true } },
         creator: { select: { id: true, displayName: true, profileImage: true, userId: true } },
@@ -338,12 +376,43 @@ export const agreementService = {
       throw error;
     }
 
-    return prisma.agreement.update({
-      where: { id: agreementId },
+    // Atomic conditional update requiring id = agreementId AND status = 'PENDING_ACCEPTANCE'
+    const updateResult = await prisma.agreement.updateMany({
+      where: {
+        id: agreementId,
+        status: 'PENDING_ACCEPTANCE',
+      },
       data: {
         status: 'ACCEPTED',
         creatorAcceptedAt: new Date(),
       },
+    });
+
+    if (updateResult.count === 0) {
+      const latest = await prisma.agreement.findUnique({
+        where: { id: agreementId },
+        select: { status: true },
+      });
+
+      if (!latest) {
+        const error = new Error('Agreement not found');
+        error.statusCode = 404;
+        throw error;
+      }
+      if (latest.status === 'ACCEPTED') {
+        const error = new Error('Agreement has already been accepted');
+        error.statusCode = 409;
+        error.code = 'STATE_CONFLICT';
+        throw error;
+      }
+      const error = new Error(`Cannot accept an agreement in ${latest.status} status`);
+      error.statusCode = 409;
+      error.code = 'STATE_CONFLICT';
+      throw error;
+    }
+
+    return prisma.agreement.findUnique({
+      where: { id: agreementId },
       include: {
         project: { select: { id: true, name: true, logo: true, userId: true } },
         creator: { select: { id: true, displayName: true, profileImage: true, userId: true } },
@@ -393,12 +462,43 @@ export const agreementService = {
       throw error;
     }
 
-    return prisma.agreement.update({
-      where: { id: agreementId },
+    // Atomic conditional update requiring id = agreementId AND status = 'PENDING_ACCEPTANCE'
+    const updateResult = await prisma.agreement.updateMany({
+      where: {
+        id: agreementId,
+        status: 'PENDING_ACCEPTANCE',
+      },
       data: {
         status: 'REJECTED',
         rejectionReason: rejectionReason.trim(),
       },
+    });
+
+    if (updateResult.count === 0) {
+      const latest = await prisma.agreement.findUnique({
+        where: { id: agreementId },
+        select: { status: true },
+      });
+
+      if (!latest) {
+        const error = new Error('Agreement not found');
+        error.statusCode = 404;
+        throw error;
+      }
+      if (latest.status === 'ACCEPTED') {
+        const error = new Error('Cannot reject an agreement that has already been accepted');
+        error.statusCode = 409;
+        error.code = 'STATE_CONFLICT';
+        throw error;
+      }
+      const error = new Error(`Cannot reject an agreement in ${latest.status} status`);
+      error.statusCode = 409;
+      error.code = 'STATE_CONFLICT';
+      throw error;
+    }
+
+    return prisma.agreement.findUnique({
+      where: { id: agreementId },
       include: {
         project: { select: { id: true, name: true, logo: true, userId: true } },
         creator: { select: { id: true, displayName: true, profileImage: true, userId: true } },

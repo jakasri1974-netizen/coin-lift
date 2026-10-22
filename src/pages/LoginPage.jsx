@@ -40,7 +40,7 @@ export default function LoginPage({ onNavigate }) {
               <ArrowUpRight className="w-6 h-6 text-cyan-200" />
             </div>
             <h2 className="text-2xl font-extrabold text-white font-sans">
-              Welcome Back to COIN<span className="text-cyan-400">LIFT</span>
+              Welcome Back to CRYP<span className="text-cyan-400">LIFT</span>
             </h2>
             <p className="text-xs text-slate-400 mt-1">
               Sign in to manage creator collaborations & active campaigns

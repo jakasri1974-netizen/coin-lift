@@ -43,7 +43,7 @@ export default function TrustSection() {
             Built Around <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400">Transparent Collaboration</span>
           </h2>
           <p className="text-slate-300 text-base sm:text-lg">
-            COINLIFT enforces clarity at every step, ensuring both token projects and content creators have complete trust in their collaboration workflows.
+            CRYPLIFT enforces clarity at every step, ensuring both token projects and content creators have complete trust in their collaboration workflows.
           </p>
         </div>
 

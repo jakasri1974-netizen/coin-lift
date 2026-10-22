@@ -79,7 +79,7 @@ export default function Navbar({ currentPath, onNavigate }) {
 
             <div className="flex flex-col">
               <span className="font-extrabold text-xl tracking-tight text-white flex items-center gap-1 font-sans">
-                COIN<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">LIFT</span>
+                CRYP<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">LIFT</span>
               </span>
             </div>
           </a>

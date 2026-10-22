@@ -6,7 +6,7 @@ export async function getHealthStatus(req, res, next) {
 
     res.status(200).json({
       success: true,
-      message: 'CoinLift API is running',
+      message: 'CrypLift API is running',
       environment: process.env.NODE_ENV || 'development',
       timestamp: new Date().toISOString(),
       database: dbStatus,

@@ -2,7 +2,7 @@
  * Centralized API Error Handling Middleware
  */
 export function errorHandler(err, req, res, next) {
-  console.error('[CoinLift API Error]:', err);
+  console.error('[CrypLift API Error]:', err);
 
   if (err.name === 'ZodError' || err.errors) {
     const errorMessages = err.errors ? err.errors.map((e) => e.message).join(', ') : err.message;

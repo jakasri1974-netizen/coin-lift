@@ -44,7 +44,7 @@ export default function WhyCoinLift() {
             <span>Value Proposition</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-4 font-sans">
-            Why <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">COINLIFT</span>?
+            Why <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">CRYPLIFT</span>?
           </h2>
           <p className="text-slate-300 text-base sm:text-lg">
             Empowering the Web3 ecosystem with a specialized marketplace built for genuine creator influence and community growth.

@@ -40,7 +40,7 @@ export default function SignupPage({ onNavigate }) {
           <div className="flex flex-col items-center text-center mb-8">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[11px] font-semibold mb-3">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Join COINLIFT Marketplace</span>
+              <span>Join CRYPLIFT Marketplace</span>
             </div>
             <h2 className="text-3xl font-extrabold text-white font-sans">
               Create Your Account
@@ -61,7 +61,7 @@ export default function SignupPage({ onNavigate }) {
             <div className="py-10 text-center space-y-3">
               <CheckCircle2 className="w-14 h-14 text-emerald-400 mx-auto animate-bounce" />
               <h3 className="text-xl font-bold text-white">Account Created!</h3>
-              <p className="text-xs text-slate-400">Welcome to COINLIFT. Redirecting to workspace home...</p>
+              <p className="text-xs text-slate-400">Welcome to CRYPLIFT. Redirecting to workspace home...</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -137,7 +137,7 @@ export default function SignupPage({ onNavigate }) {
               </div>
 
               <div className="text-[11px] text-slate-400 leading-relaxed">
-                By creating an account, you agree to COINLIFT's{' '}
+                By creating an account, you agree to CRYPLIFT's{' '}
                 <a href="#" className="text-cyan-400 hover:underline">Terms of Service</a> and{' '}
                 <a href="#" className="text-cyan-400 hover:underline">Privacy Policy</a>.
               </div>

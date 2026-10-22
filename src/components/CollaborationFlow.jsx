@@ -23,7 +23,7 @@ export default function CollaborationFlow() {
     },
     {
       id: 1,
-      title: 'COINLIFT Platform',
+      title: 'CRYPLIFT Platform',
       subtitle: 'Matches relevant creators',
       detail: 'Algorithmic compatibility matching pairs project with vetted Web3 influencers and locks milestone terms.',
       icon: Zap,
@@ -74,7 +74,7 @@ export default function CollaborationFlow() {
             <span>End-to-End Collaboration Architecture</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-4 font-sans">
-            The <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-emerald-400">COINLIFT Collaboration Flow</span>
+            The <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-emerald-400">CRYPLIFT Collaboration Flow</span>
           </h2>
           <p className="text-slate-300 text-base sm:text-lg">
             A seamless value chain connecting emerging projects to high-intent Web3 communities.

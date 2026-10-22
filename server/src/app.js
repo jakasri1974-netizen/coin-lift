@@ -37,7 +37,7 @@ app.use('/api', apiRoutes);
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'CoinLift API Foundation Gateway',
+    message: 'CrypLift API Foundation Gateway',
     documentation: '/api/health',
   });
 });

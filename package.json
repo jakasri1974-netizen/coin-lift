@@ -4,13 +4,15 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite.cmd",
-    "build": "vite.cmd build",
-    "preview": "vite.cmd preview",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server/src/server.js",
     "server": "node server/src/server.js",
     "server:dev": "nodemon server/src/server.js",
     "prisma:generate": "prisma generate --schema=server/prisma/schema.prisma",
-    "prisma:migrate": "prisma migrate dev --schema=server/prisma/schema.prisma"
+    "prisma:migrate": "prisma migrate dev --schema=server/prisma/schema.prisma",
+    "prisma:deploy": "prisma migrate deploy --schema=server/prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "5.22.0",

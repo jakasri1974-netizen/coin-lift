@@ -4,6 +4,8 @@ import {
   updateAgreementSchema,
   rejectAgreementSchema,
 } from './validators.js';
+import { agreementService } from '../services/agreementService.js';
+import { prisma } from '../config/db.js';
 
 console.log('====================================================');
 console.log('🧪 COINLIFT PHASE 10: AUTOMATED TEST SUITE EXECUTION');
@@ -474,6 +476,464 @@ runTest('Authorized participants and Admins can view agreement', () => {
 
   const adminView = mockAgreementService.getAgreementById(activeAgreementId, mockAdminUser.id, 'ADMIN');
   assert.strictEqual(adminView.id, activeAgreementId);
+});
+
+// -------------------------------------------------------------------
+// SUITE 3: Atomic Transitions & Concurrency Conflict Tests (Mocked Unit Tests)
+// -------------------------------------------------------------------
+console.log('\n--- SUITE 3: ATOMIC TRANSITIONS & CONCURRENCY CONFLICT TESTS (MOCKED UNIT TESTS) ---');
+console.log('ℹ️ NOTE: The following tests directly invoke agreementService with mocked Prisma Client adapters.');
+console.log('ℹ️ They validate conditional update predicates, state conflict detection (409), and OCC versioning.');
+console.log('ℹ️ Genuine PostgreSQL concurrency behavior (row locking and EvalPlanQual) requires an isolated PostgreSQL instance.\n');
+
+// Test 21: Direct agreementService.acceptAgreement() succeeds and invokes conditional updateMany
+await runAsyncTest('agreementService.acceptAgreement() conditionally updates and returns payload', async () => {
+  const origFindUnique = prisma.agreement.findUnique;
+  const origUpdateMany = prisma.agreement.updateMany;
+  let updateManyCalledWith = null;
+
+  try {
+    const mockRecord = {
+      id: 'agr-test-1',
+      title: 'Bilateral Test Agreement',
+      status: 'PENDING_ACCEPTANCE',
+      version: 1,
+      creatorAcceptedAt: null,
+      rejectionReason: null,
+      project: { id: 'p1', name: 'Project 1', logo: null, userId: 'po-user-1' },
+      creator: { id: 'c1', displayName: 'Creator 1', profileImage: null, userId: 'creator-user-1' },
+      campaign: { id: 'cmp1', title: 'Campaign 1', category: 'DeFi' },
+      projectOwner: { id: 'po-user-1', name: 'PO 1', email: 'po@test.com' },
+    };
+
+    prisma.agreement.findUnique = async ({ select }) => {
+      if (select) {
+        const res = {};
+        for (const k of Object.keys(select)) res[k] = mockRecord[k];
+        return res;
+      }
+      return { ...mockRecord };
+    };
+
+    prisma.agreement.updateMany = async (args) => {
+      updateManyCalledWith = args;
+      if (args.where.id === mockRecord.id && args.where.status === mockRecord.status) {
+        Object.assign(mockRecord, args.data);
+        return { count: 1 };
+      }
+      return { count: 0 };
+    };
+
+    const res = await agreementService.acceptAgreement('agr-test-1', 'creator-user-1');
+    assert.strictEqual(res.status, 'ACCEPTED');
+    assert.strictEqual(updateManyCalledWith.where.id, 'agr-test-1');
+    assert.strictEqual(updateManyCalledWith.where.status, 'PENDING_ACCEPTANCE');
+    assert.strictEqual(updateManyCalledWith.data.status, 'ACCEPTED');
+    assert.ok(updateManyCalledWith.data.creatorAcceptedAt instanceof Date);
+    assert.ok(res.project && res.creator && res.campaign && res.projectOwner, 'Relations must be included');
+  } finally {
+    prisma.agreement.findUnique = origFindUnique;
+    prisma.agreement.updateMany = origUpdateMany;
+  }
+});
+
+// Test 22: Direct agreementService.rejectAgreement()
+await runAsyncTest('agreementService.rejectAgreement() conditionally updates and saves rejectionReason', async () => {
+  const origFindUnique = prisma.agreement.findUnique;
+  const origUpdateMany = prisma.agreement.updateMany;
+  let updateManyCalledWith = null;
+
+  try {
+    const mockRecord = {
+      id: 'agr-test-2',
+      title: 'Bilateral Test Agreement',
+      status: 'PENDING_ACCEPTANCE',
+      version: 1,
+      creatorAcceptedAt: null,
+      rejectionReason: null,
+      project: { id: 'p1', name: 'Project 1', logo: null, userId: 'po-user-1' },
+      creator: { id: 'c1', displayName: 'Creator 1', profileImage: null, userId: 'creator-user-1' },
+      campaign: { id: 'cmp1', title: 'Campaign 1', category: 'DeFi' },
+      projectOwner: { id: 'po-user-1', name: 'PO 1', email: 'po@test.com' },
+    };
+
+    prisma.agreement.findUnique = async ({ select }) => {
+      if (select) {
+        const res = {};
+        for (const k of Object.keys(select)) res[k] = mockRecord[k];
+        return res;
+      }
+      return { ...mockRecord };
+    };
+
+    prisma.agreement.updateMany = async (args) => {
+      updateManyCalledWith = args;
+      if (args.where.id === mockRecord.id && args.where.status === mockRecord.status) {
+        Object.assign(mockRecord, args.data);
+        return { count: 1 };
+      }
+      return { count: 0 };
+    };
+
+    const res = await agreementService.rejectAgreement(
+      'agr-test-2',
+      'creator-user-1',
+      '  Scope is too broad for the agreed budget.  '
+    );
+    assert.strictEqual(res.status, 'REJECTED');
+    assert.strictEqual(updateManyCalledWith.where.id, 'agr-test-2');
+    assert.strictEqual(updateManyCalledWith.where.status, 'PENDING_ACCEPTANCE');
+    assert.strictEqual(updateManyCalledWith.data.status, 'REJECTED');
+    assert.strictEqual(updateManyCalledWith.data.rejectionReason, 'Scope is too broad for the agreed budget.');
+  } finally {
+    prisma.agreement.findUnique = origFindUnique;
+    prisma.agreement.updateMany = origUpdateMany;
+  }
+});
+
+// Test 23: Strict participant authorization enforcement
+await runAsyncTest('agreementService enforces strict participant authorization (403 Forbidden)', async () => {
+  const origFindUnique = prisma.agreement.findUnique;
+
+  try {
+    prisma.agreement.findUnique = async () => ({
+      id: 'agr-test-3',
+      status: 'PENDING_ACCEPTANCE',
+      creator: { userId: 'creator-user-1' },
+      project: { userId: 'po-user-1' },
+    });
+
+    let acceptErr = null;
+    try {
+      await agreementService.acceptAgreement('agr-test-3', 'attacker-user');
+    } catch (e) {
+      acceptErr = e;
+    }
+    assert.ok(acceptErr, 'Unauthorized accept should throw error');
+    assert.strictEqual(acceptErr.statusCode, 403);
+    assert.match(acceptErr.message, /Forbidden: Only the assigned Creator can accept/);
+
+    let rejectErr = null;
+    try {
+      await agreementService.rejectAgreement('agr-test-3', 'attacker-user', 'Malicious rejection');
+    } catch (e) {
+      rejectErr = e;
+    }
+    assert.ok(rejectErr, 'Unauthorized reject should throw error');
+    assert.strictEqual(rejectErr.statusCode, 403);
+    assert.match(rejectErr.message, /Forbidden: Only the assigned Creator can reject/);
+
+    let submitErr = null;
+    try {
+      await agreementService.submitAgreement('agr-test-3', 'attacker-user');
+    } catch (e) {
+      submitErr = e;
+    }
+    assert.ok(submitErr, 'Unauthorized submit should throw error');
+    assert.strictEqual(submitErr.statusCode, 403);
+    assert.match(submitErr.message, /Forbidden: Only the Project Owner can submit/);
+  } finally {
+    prisma.agreement.findUnique = origFindUnique;
+  }
+});
+
+// Test 24: Repeated invalid transitions on already ACCEPTED agreement
+await runAsyncTest('Repeated invalid transitions on already ACCEPTED agreement fail with 400', async () => {
+  const origFindUnique = prisma.agreement.findUnique;
+
+  try {
+    prisma.agreement.findUnique = async () => ({
+      id: 'agr-test-4',
+      status: 'ACCEPTED',
+      creator: { userId: 'creator-user-1' },
+      project: { userId: 'po-user-1' },
+    });
+
+    let acceptErr = null;
+    try {
+      await agreementService.acceptAgreement('agr-test-4', 'creator-user-1');
+    } catch (e) {
+      acceptErr = e;
+    }
+    assert.strictEqual(acceptErr?.statusCode, 400);
+    assert.match(acceptErr?.message, /Agreement has already been accepted/);
+
+    let rejectErr = null;
+    try {
+      await agreementService.rejectAgreement('agr-test-4', 'creator-user-1', 'Reason');
+    } catch (e) {
+      rejectErr = e;
+    }
+    assert.strictEqual(rejectErr?.statusCode, 400);
+    assert.match(rejectErr?.message, /Cannot reject an agreement that has already been accepted/);
+
+    let submitErr = null;
+    try {
+      await agreementService.submitAgreement('agr-test-4', 'po-user-1');
+    } catch (e) {
+      submitErr = e;
+    }
+    assert.strictEqual(submitErr?.statusCode, 400);
+    assert.match(submitErr?.message, /Agreement has already been accepted and cannot be resubmitted/);
+  } finally {
+    prisma.agreement.findUnique = origFindUnique;
+  }
+});
+
+// Test 25: Concurrent acceptance collision: losing request receives 409 STATE_CONFLICT
+await runAsyncTest('Concurrent acceptance attempts: losing request receives 409 STATE_CONFLICT', async () => {
+  const origFindUnique = prisma.agreement.findUnique;
+  const origUpdateMany = prisma.agreement.updateMany;
+
+  try {
+    prisma.agreement.findUnique = async ({ select, include }) => {
+      if (include?.creator) {
+        return {
+          id: 'agr-test-5',
+          status: 'PENDING_ACCEPTANCE',
+          creator: { userId: 'creator-user-1' },
+        };
+      }
+      if (select?.status) {
+        return { status: 'ACCEPTED' };
+      }
+      return null;
+    };
+
+    // Losing request matches 0 rows because winner transitioned it first
+    prisma.agreement.updateMany = async () => ({ count: 0 });
+
+    let conflictErr = null;
+    try {
+      await agreementService.acceptAgreement('agr-test-5', 'creator-user-1');
+    } catch (e) {
+      conflictErr = e;
+    }
+
+    assert.ok(conflictErr, 'Should detect concurrency collision');
+    assert.strictEqual(conflictErr.statusCode, 409);
+    assert.strictEqual(conflictErr.code, 'STATE_CONFLICT');
+    assert.strictEqual(conflictErr.message, 'Agreement has already been accepted');
+  } finally {
+    prisma.agreement.findUnique = origFindUnique;
+    prisma.agreement.updateMany = origUpdateMany;
+  }
+});
+
+// Test 26: Concurrent accept vs reject: losing reject receives 409 STATE_CONFLICT
+await runAsyncTest('Concurrent accept vs reject: losing reject receives 409 STATE_CONFLICT', async () => {
+  const origFindUnique = prisma.agreement.findUnique;
+  const origUpdateMany = prisma.agreement.updateMany;
+
+  try {
+    prisma.agreement.findUnique = async ({ select, include }) => {
+      if (include?.creator) {
+        return {
+          id: 'agr-test-6',
+          status: 'PENDING_ACCEPTANCE',
+          creator: { userId: 'creator-user-1' },
+        };
+      }
+      if (select?.status) {
+        return { status: 'ACCEPTED' };
+      }
+      return null;
+    };
+
+    prisma.agreement.updateMany = async () => ({ count: 0 });
+
+    let conflictErr = null;
+    try {
+      await agreementService.rejectAgreement('agr-test-6', 'creator-user-1', 'Too slow rejection');
+    } catch (e) {
+      conflictErr = e;
+    }
+
+    assert.ok(conflictErr, 'Reject should fail with conflict');
+    assert.strictEqual(conflictErr.statusCode, 409);
+    assert.strictEqual(conflictErr.code, 'STATE_CONFLICT');
+    assert.strictEqual(conflictErr.message, 'Cannot reject an agreement that has already been accepted');
+  } finally {
+    prisma.agreement.findUnique = origFindUnique;
+    prisma.agreement.updateMany = origUpdateMany;
+  }
+});
+
+// Test 27: Optimistic concurrency conflict on submitAgreement() when concurrent transition occurs (Unit Test)
+await runAsyncTest('submitAgreement() detects OCC conflict (409 STATE_CONFLICT) when concurrent transition occurs', async () => {
+  const origFindUnique = prisma.agreement.findUnique;
+  const origUpdateMany = prisma.agreement.updateMany;
+  let updateManyCalledWith = null;
+
+  try {
+    // 1. Initial agreement read returns REJECTED, version 1
+    // 4. Subsequent latest-state read returns PENDING_ACCEPTANCE (simulating winning concurrent transition)
+    prisma.agreement.findUnique = async ({ where, select, include }) => {
+      if (include?.project) {
+        return {
+          id: 'agr-test-7',
+          title: 'Revision Contract',
+          scope: 'Updated terms and deliverables.',
+          deliverables: ['1x Video', '1x Thread'],
+          rate: 3000,
+          currency: 'USDC',
+          status: 'REJECTED',
+          version: 1,
+          rejectionReason: 'Previous rate too low',
+          project: { id: 'p1', userId: 'po-user-1', name: 'Project 1' },
+          creator: { id: 'c1', userId: 'creator-1', displayName: 'Creator 1' },
+          campaign: { id: 'cmp1', title: 'Campaign 1', category: 'DeFi' },
+          projectOwner: { id: 'po-user-1', name: 'PO 1', email: 'po@test.com' },
+        };
+      }
+      if (select?.status) {
+        return {
+          status: 'PENDING_ACCEPTANCE',
+          version: 2,
+        };
+      }
+      return null;
+    };
+
+    // 2. The service calls updateMany() with expected status REJECTED and version 1
+    // 3. Simulate a concurrent state change by making updateMany() return { count: 0 }
+    prisma.agreement.updateMany = async (args) => {
+      updateManyCalledWith = args;
+      return { count: 0 };
+    };
+
+    let conflictErr = null;
+    try {
+      await agreementService.submitAgreement('agr-test-7', 'po-user-1');
+    } catch (e) {
+      conflictErr = e;
+    }
+
+    // 5. Assert that submitAgreement() throws an error with statusCode 409 and code 'STATE_CONFLICT'
+    assert.ok(conflictErr, 'submitAgreement must throw on concurrency collision');
+    assert.strictEqual(conflictErr.statusCode, 409);
+    assert.strictEqual(conflictErr.code, 'STATE_CONFLICT');
+    assert.strictEqual(conflictErr.message, 'Agreement is already pending Creator acceptance');
+
+    // 6. Assert that the expected conditional update predicate was used
+    assert.ok(updateManyCalledWith, 'updateMany must have been invoked');
+    assert.strictEqual(updateManyCalledWith.where.id, 'agr-test-7');
+    assert.strictEqual(updateManyCalledWith.where.status, 'REJECTED');
+    assert.strictEqual(updateManyCalledWith.where.version, 1);
+    assert.strictEqual(updateManyCalledWith.data.status, 'PENDING_ACCEPTANCE');
+    assert.strictEqual(updateManyCalledWith.data.version, 2);
+    assert.strictEqual(updateManyCalledWith.data.rejectionReason, null);
+  } finally {
+    // 7. Ensure every mocked Prisma method is restored in a finally block
+    prisma.agreement.findUnique = origFindUnique;
+    prisma.agreement.updateMany = origUpdateMany;
+  }
+});
+
+// Test 28: Initial DRAFT submission preserves version 1 without incrementing
+await runAsyncTest('Initial DRAFT submission preserves version 1 without incrementing', async () => {
+  const origFindUnique = prisma.agreement.findUnique;
+  const origUpdateMany = prisma.agreement.updateMany;
+  let updateData = null;
+
+  try {
+    const mockRecord = {
+      id: 'agr-draft-1',
+      title: 'Draft Contract',
+      scope: 'Scope here',
+      deliverables: ['1x Deliverable'],
+      rate: 1500,
+      currency: 'USDC',
+      status: 'DRAFT',
+      version: 1,
+      creatorAcceptedAt: null,
+      rejectionReason: null,
+      project: { id: 'p1', userId: 'po-user-1', name: 'Project 1' },
+      creator: { id: 'c1', userId: 'creator-1', displayName: 'Creator 1' },
+      campaign: { id: 'cmp1', title: 'Campaign', category: 'DeFi' },
+      projectOwner: { id: 'po-user-1', name: 'PO 1', email: 'po@test.com' },
+    };
+
+    prisma.agreement.findUnique = async ({ select }) => {
+      if (select) {
+        const res = {};
+        for (const k of Object.keys(select)) res[k] = mockRecord[k];
+        return res;
+      }
+      return { ...mockRecord };
+    };
+
+    prisma.agreement.updateMany = async ({ where, data }) => {
+      updateData = data;
+      if (where.id === mockRecord.id && where.status === mockRecord.status && where.version === mockRecord.version) {
+        Object.assign(mockRecord, data);
+        return { count: 1 };
+      }
+      return { count: 0 };
+    };
+
+    const res = await agreementService.submitAgreement('agr-draft-1', 'po-user-1');
+    assert.strictEqual(res.status, 'PENDING_ACCEPTANCE');
+    assert.strictEqual(updateData.version, 1, 'Draft submission must preserve version 1');
+    assert.strictEqual(res.version, 1);
+  } finally {
+    prisma.agreement.findUnique = origFindUnique;
+    prisma.agreement.updateMany = origUpdateMany;
+  }
+});
+
+// Test 29: Response payload compatibility: returns all specified relation fields and scalar attributes
+await runAsyncTest('Response payload compatibility: returns all specified relation fields and scalar attributes', async () => {
+  const origFindUnique = prisma.agreement.findUnique;
+  const origUpdateMany = prisma.agreement.updateMany;
+
+  try {
+    const mockRecord = {
+      id: 'agr-full-1',
+      title: 'Full Contract',
+      scope: 'Deep dive review',
+      deliverables: ['1x Video'],
+      rate: 2000,
+      currency: 'USDC',
+      status: 'PENDING_ACCEPTANCE',
+      version: 1,
+      creatorAcceptedAt: null,
+      rejectionReason: null,
+      project: { id: 'p1', name: 'Project 1', logo: 'logo.png', userId: 'po-1' },
+      creator: { id: 'c1', displayName: 'Alice', profileImage: 'alice.png', userId: 'creator-1' },
+      campaign: { id: 'cmp1', title: 'Campaign', category: 'DeFi' },
+      projectOwner: { id: 'po-1', name: 'Owner', email: 'owner@coinlift.test' },
+    };
+
+    prisma.agreement.findUnique = async ({ select }) => {
+      if (select) {
+        const res = {};
+        for (const k of Object.keys(select)) res[k] = mockRecord[k];
+        return res;
+      }
+      return { ...mockRecord };
+    };
+
+    prisma.agreement.updateMany = async (args) => {
+      if (args.where.id === mockRecord.id && args.where.status === mockRecord.status) {
+        Object.assign(mockRecord, args.data);
+        return { count: 1 };
+      }
+      return { count: 0 };
+    };
+
+    const accepted = await agreementService.acceptAgreement('agr-full-1', 'creator-1');
+    assert.strictEqual(accepted.id, 'agr-full-1');
+    assert.strictEqual(accepted.status, 'ACCEPTED');
+    assert.ok(accepted.creatorAcceptedAt);
+    assert.strictEqual(accepted.project.id, 'p1');
+    assert.strictEqual(accepted.creator.id, 'c1');
+    assert.strictEqual(accepted.campaign.id, 'cmp1');
+    assert.strictEqual(accepted.projectOwner.id, 'po-1');
+  } finally {
+    prisma.agreement.findUnique = origFindUnique;
+    prisma.agreement.updateMany = origUpdateMany;
+  }
 });
 
 console.log('\n====================================================');

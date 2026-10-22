@@ -84,7 +84,7 @@ export default function DashboardPreview() {
             Everything You Need to <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Manage Collaborations</span>
           </h2>
           <p className="text-slate-300 text-base sm:text-lg">
-            From creator discovery to campaign tracking, COINLIFT brings the entire collaboration workflow into one workspace.
+            From creator discovery to campaign tracking, CRYPLIFT brings the entire collaboration workflow into one workspace.
           </p>
         </div>
 
