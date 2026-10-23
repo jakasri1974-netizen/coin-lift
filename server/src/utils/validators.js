@@ -109,7 +109,15 @@ export const createCampaignSchema = z.object({
   category: z.string().min(1, 'Category is required'),
   budget: z.number().positive('Budget must be a positive number'),
   currency: z.string().default('USDC'),
-  deliverables: z.array(z.string()).min(1, 'At least one deliverable is required'),
+  deliverables: z.preprocess(
+    (val) => {
+      if (typeof val === 'string') {
+        return val.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
+      }
+      return val;
+    },
+    z.array(z.string().min(1, 'Deliverable cannot be empty')).min(1, 'At least one deliverable is required')
+  ),
   requirements: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
@@ -129,6 +137,15 @@ export const updateApplicationStatusSchema = z.object({
   status: z.enum(['ACCEPTED', 'REJECTED'], {
     errorMap: () => ({ message: 'Status must be ACCEPTED or REJECTED' }),
   }),
+});
+
+// Campaign Invitation Validation Schema (Project Owner inviting Creator)
+export const inviteCreatorSchema = z.object({
+  creatorId: z.string({ required_error: 'Creator ID is required' }).min(1, 'Creator ID cannot be empty'),
+  campaignId: z.string().min(1, 'Campaign ID cannot be empty').optional(),
+  message: z.string().max(1000, 'Invitation message cannot exceed 1000 characters').optional(),
+  proposedRate: z.number().positive('Proposed rate must be positive').optional(),
+  proposedDeliverables: z.array(z.string()).optional(),
 });
 
 // Collaboration & Messaging Validation Schemas

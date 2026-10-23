@@ -108,36 +108,69 @@ export default function Navbar({ currentPath, onNavigate }) {
           {/* Right CTAs (Authenticated vs Unauthenticated) */}
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated ? (
-              <div className="flex items-center gap-3 bg-[#0d1322]/80 px-3.5 py-1.5 rounded-2xl border border-white/10">
-                <div
-                  onClick={() => {
-                    if (user?.role === 'CREATOR') onNavigate('/creator/profile');
-                    if (user?.role === 'PROJECT_OWNER') onNavigate('/project/profile');
-                  }}
-                  className="flex items-center gap-2 cursor-pointer hover:opacity-90"
-                  title="Manage Profile Dashboard"
-                >
-                  <div className={`w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs border ${
-                    user.role === 'PROJECT_OWNER'
-                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
-                      : 'bg-purple-500/20 text-purple-300 border-purple-500/30'
-                  }`}>
-                    {user.name?.charAt(0).toUpperCase() || 'U'}
+              <div className="flex items-center gap-2.5">
+                {user.role === 'CREATOR' && (
+                  <button
+                    onClick={() => onNavigate('/creator/profile')}
+                    className="px-3.5 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-xs font-semibold flex items-center gap-1.5 transition-all"
+                  >
+                    <User className="w-3.5 h-3.5 text-purple-400" />
+                    <span>My Creator Profile</span>
+                  </button>
+                )}
+                {user.role === 'PROJECT_OWNER' && (
+                  <button
+                    onClick={() => onNavigate('/project/profile')}
+                    className="px-3.5 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 text-xs font-semibold flex items-center gap-1.5 transition-all"
+                  >
+                    <Rocket className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Project Dashboard</span>
+                  </button>
+                )}
+                {user.role === 'ADMIN' && (
+                  <button
+                    onClick={() => onNavigate('/admin')}
+                    className="px-3.5 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 text-xs font-semibold flex items-center gap-1.5 transition-all"
+                  >
+                    <Shield className="w-3.5 h-3.5 text-red-400" />
+                    <span>Admin Dashboard</span>
+                  </button>
+                )}
+                <div className="flex items-center gap-3 bg-[#0d1322]/80 px-3.5 py-1.5 rounded-2xl border border-white/10">
+                  <div
+                    onClick={() => {
+                      if (user?.role === 'CREATOR') onNavigate('/creator/profile');
+                      if (user?.role === 'PROJECT_OWNER') onNavigate('/project/profile');
+                      if (user?.role === 'ADMIN') onNavigate('/admin');
+                    }}
+                    className="flex items-center gap-2 cursor-pointer hover:opacity-90"
+                    title="Manage Profile Dashboard"
+                  >
+                    <div className={`w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs border ${
+                      user.role === 'PROJECT_OWNER'
+                        ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
+                        : user.role === 'ADMIN'
+                        ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                        : 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                    }`}>
+                      {user.name?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-white leading-tight">{user.name}</span>
+                      <span className={`text-[10px] font-mono leading-none ${
+                        user.role === 'PROJECT_OWNER' ? 'text-cyan-400' : user.role === 'ADMIN' ? 'text-red-400' : 'text-purple-400'
+                      }`}>{user.role}</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-white leading-tight">{user.name}</span>
-                    <span className={`text-[10px] font-mono leading-none ${
-                      user.role === 'PROJECT_OWNER' ? 'text-cyan-400' : 'text-purple-400'
-                    }`}>{user.role}</span>
-                  </div>
+                  <button
+                    id="navbar-logout-btn"
+                    onClick={handleLogoutClick}
+                    className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-red-400 transition-colors"
+                    title="Logout"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
                 </div>
-                <button
-                  onClick={handleLogoutClick}
-                  className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-red-400 transition-colors"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
               </div>
             ) : (
               <>
@@ -193,13 +226,42 @@ export default function Navbar({ currentPath, onNavigate }) {
             
             <div className="pt-4 border-t border-white/10 flex flex-col gap-2.5 mt-2">
               {isAuthenticated ? (
-                <button
-                  onClick={handleLogoutClick}
-                  className="w-full py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 font-semibold text-sm hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Logout ({user.name})</span>
-                </button>
+                <>
+                  {user.role === 'CREATOR' && (
+                    <button
+                      onClick={() => handleNavClick('/creator/profile')}
+                      className="w-full py-3 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 font-semibold text-sm hover:bg-purple-500/25 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <User className="w-4 h-4 text-purple-400" />
+                      <span>My Creator Profile</span>
+                    </button>
+                  )}
+                  {user.role === 'PROJECT_OWNER' && (
+                    <button
+                      onClick={() => handleNavClick('/project/profile')}
+                      className="w-full py-3 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 font-semibold text-sm hover:bg-cyan-500/25 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Rocket className="w-4 h-4 text-cyan-400" />
+                      <span>Project Dashboard</span>
+                    </button>
+                  )}
+                  {user.role === 'ADMIN' && (
+                    <button
+                      onClick={() => handleNavClick('/admin')}
+                      className="w-full py-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 font-semibold text-sm hover:bg-red-500/25 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Shield className="w-4 h-4 text-red-400" />
+                      <span>Admin Dashboard</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={handleLogoutClick}
+                    className="w-full py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 font-semibold text-sm hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout ({user.name})</span>
+                  </button>
+                </>
               ) : (
                 <>
                   <button

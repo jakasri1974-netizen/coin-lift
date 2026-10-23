@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../utils/api';
 import { CREATORS } from '../data/creatorsData';
+import { useAuth } from '../context/AuthContext';
 import { Search, Filter, Star, Sparkles, ArrowUpRight, Users, CheckCircle2, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
 
 export default function CreatorsPage({ onSelectCreator, onNavigate }) {
+  const { user, isAuthenticated } = useAuth();
   const [creators, setCreators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -69,6 +71,44 @@ export default function CreatorsPage({ onSelectCreator, onNavigate }) {
           <p className="text-slate-300 text-base sm:text-lg">
             Discover verified Web3 influencers, educators, and content creators to amplify your project's community reach.
           </p>
+        </div>
+
+        {/* Creator Onboarding / Profile CTA Banner */}
+        <div className="mb-10 p-5 rounded-2xl bg-gradient-to-r from-purple-900/30 via-indigo-900/20 to-[#0b0f19] border border-purple-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5 text-purple-400" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-white font-sans">
+                {isAuthenticated && user?.role === 'CREATOR'
+                  ? 'Manage Your Creator Profile & Collaborations'
+                  : 'Are you a Web3 Content Creator?'}
+              </h3>
+              <p className="text-xs text-slate-300 mt-0.5">
+                {isAuthenticated && user?.role === 'CREATOR'
+                  ? 'Complete your profile details, showcase your portfolio, and submit for marketplace verification.'
+                  : 'Build your verified profile, connect with emerging token projects, and monetize your content reach.'}
+              </p>
+            </div>
+          </div>
+          {isAuthenticated && user?.role === 'CREATOR' ? (
+            <button
+              onClick={() => onNavigate('/creator/profile')}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-purple-500/25 shrink-0 flex items-center gap-1.5 transition-all"
+            >
+              <span>Manage Creator Profile</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={() => onNavigate('/signup')}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-bold text-xs shadow-lg shadow-purple-500/25 shrink-0 flex items-center gap-1.5 transition-all"
+            >
+              <span>Join as a Creator</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Search & Filter Bar */}

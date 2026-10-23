@@ -156,7 +156,7 @@ export default function CreatorDiscovery({ onSelectCreator, onNavigate }) {
                   <div>
                     <span className="text-[10px] text-slate-400 block mb-1">Active Channels:</span>
                     <div className="flex items-center gap-2">
-                      {creator.platforms.map((p) => (
+                      {creator.platforms?.map((p) => (
                         <span key={p} className="text-[11px] font-medium px-2 py-0.5 rounded bg-white/5 text-slate-300">
                           {p}
                         </span>

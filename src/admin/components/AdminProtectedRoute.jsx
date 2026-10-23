@@ -7,7 +7,7 @@ export default function AdminProtectedRoute({ children, onNavigate }) {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      onNavigate('/admin/login');
+      onNavigate('/login');
     }
   }, [loading, isAuthenticated, onNavigate]);
 

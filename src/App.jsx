@@ -24,7 +24,6 @@ import PublicProjectProfilePage from './pages/PublicProjectProfilePage';
 import CollaborationWorkspacePage from './pages/CollaborationWorkspacePage';
 
 // Admin Portal Imports
-import AdminLoginPage from './admin/pages/AdminLoginPage';
 import AdminProtectedRoute from './admin/components/AdminProtectedRoute';
 import AdminLayout from './admin/components/AdminLayout';
 import AdminDashboardPage from './admin/pages/AdminDashboardPage';
@@ -62,11 +61,18 @@ export default function App() {
     }
   };
 
-  const isAdminRoute = currentPath.startsWith('/admin');
+  // Automatic compatibility redirect for legacy /admin/login route
+  useEffect(() => {
+    if (currentPath === '/admin/login') {
+      handleNavigate('/login');
+    }
+  }, [currentPath]);
+
+  const isAdminRoute = currentPath.startsWith('/admin') && currentPath !== '/admin/login';
 
   const renderAdminView = () => {
     if (currentPath === '/admin/login') {
-      return <AdminLoginPage onNavigate={handleNavigate} />;
+      return null;
     }
 
     let AdminViewComponent = AdminDashboardPage;
@@ -188,6 +194,7 @@ export default function App() {
             <CreatorModal
               creator={selectedCreator}
               onClose={() => setSelectedCreator(null)}
+              onNavigate={handleNavigate}
               onInvite={(creator) => {
                 console.log('Invited creator to campaign:', creator);
               }}

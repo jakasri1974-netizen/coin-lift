@@ -23,8 +23,10 @@ export default function SignupPage({ onNavigate }) {
 
     if (result && result.success) {
       setSignedUp(true);
+      const userRole = result.user?.role || selectedRole;
+      const targetPath = userRole === 'CREATOR' ? '/creator/profile' : '/';
       setTimeout(() => {
-        onNavigate('/');
+        onNavigate(targetPath);
       }, 1000);
     } else {
       setFormError(result?.error || 'Registration failed. Please try again.');
@@ -61,7 +63,11 @@ export default function SignupPage({ onNavigate }) {
             <div className="py-10 text-center space-y-3">
               <CheckCircle2 className="w-14 h-14 text-emerald-400 mx-auto animate-bounce" />
               <h3 className="text-xl font-bold text-white">Account Created!</h3>
-              <p className="text-xs text-slate-400">Welcome to CRYPLIFT. Redirecting to workspace home...</p>
+              <p className="text-xs text-slate-400">
+                {selectedRole === 'CREATOR'
+                  ? 'Welcome to CRYPLIFT. Redirecting to your creator profile...'
+                  : 'Welcome to CRYPLIFT. Redirecting to workspace home...'}
+              </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">

@@ -137,4 +137,105 @@ export const campaignService = {
       },
     });
   },
+
+  async inviteCreatorToCampaign({
+    campaignId,
+    projectProfileId,
+    creatorId,
+    message,
+    proposedRate,
+    proposedDeliverables,
+  }) {
+    // 1. Validate Campaign exists
+    const campaign = await prisma.campaign.findUnique({
+      where: { id: campaignId },
+      include: {
+        project: {
+          select: { id: true, name: true, userId: true },
+        },
+      },
+    });
+
+    if (!campaign) {
+      const error = new Error('Referenced campaign does not exist');
+      error.statusCode = 404;
+      error.code = 'CAMPAIGN_NOT_FOUND';
+      throw error;
+    }
+
+    // 2. Validate Ownership: Campaign must belong to the authenticated Project Owner
+    if (campaign.projectId !== projectProfileId) {
+      const error = new Error('Forbidden: You do not have permission to invite creators to this campaign');
+      error.statusCode = 403;
+      error.code = 'FORBIDDEN';
+      throw error;
+    }
+
+    // 3. Validate Campaign Status: Only PUBLISHED campaigns accept invitations/collaborations
+    if (campaign.status !== 'PUBLISHED') {
+      const error = new Error(`Cannot invite creators to a ${campaign.status} campaign. Campaign must be PUBLISHED.`);
+      error.statusCode = 400;
+      error.code = 'CAMPAIGN_NOT_PUBLISHED';
+      throw error;
+    }
+
+    // 4. Validate Target Creator: Check by CreatorProfile.id or User.id
+    let targetCreator = await prisma.creatorProfile.findUnique({
+      where: { id: creatorId },
+      include: { user: { select: { id: true, email: true, name: true } } },
+    });
+
+    if (!targetCreator) {
+      targetCreator = await prisma.creatorProfile.findUnique({
+        where: { userId: creatorId },
+        include: { user: { select: { id: true, email: true, name: true } } },
+      });
+    }
+
+    if (!targetCreator) {
+      const error = new Error('Referenced Creator profile does not exist');
+      error.statusCode = 404;
+      error.code = 'CREATOR_NOT_FOUND';
+      throw error;
+    }
+
+    // 5. Check duplicate application/invitation
+    const existingApplication = await prisma.application.findUnique({
+      where: {
+        unique_creator_campaign_application: {
+          creatorId: targetCreator.id,
+          campaignId: campaign.id,
+        },
+      },
+    });
+
+    if (existingApplication) {
+      const error = new Error('This creator has already been invited or applied to this campaign');
+      error.statusCode = 409;
+      error.code = 'DUPLICATE_INVITATION';
+      throw error;
+    }
+
+    // 6. Create Application record as invitation
+    const application = await prisma.application.create({
+      data: {
+        creatorId: targetCreator.id,
+        campaignId: campaign.id,
+        proposal: message?.trim() || `Campaign invitation from ${campaign.project.name}`,
+        proposedDeliverables: proposedDeliverables || campaign.deliverables || [],
+        proposedRate: proposedRate !== undefined ? proposedRate : campaign.budget,
+        status: 'PENDING',
+      },
+      include: {
+        creator: {
+          select: { id: true, displayName: true, category: true, profileImage: true },
+        },
+        campaign: {
+          select: { id: true, title: true, budget: true, category: true, currency: true, status: true, project: { select: { id: true, name: true, logo: true } } },
+        },
+      },
+    });
+
+    return application;
+  },
 };

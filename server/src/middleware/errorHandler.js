@@ -4,14 +4,15 @@
 export function errorHandler(err, req, res, next) {
   console.error('[CrypLift API Error]:', err);
 
-  if (err.name === 'ZodError' || err.errors) {
-    const errorMessages = err.errors ? err.errors.map((e) => e.message).join(', ') : err.message;
+  if (err.name === 'ZodError' || err.errors || err.issues) {
+    const issues = err.errors || err.issues;
+    const errorMessages = issues && Array.isArray(issues) ? issues.map((e) => e.message).join(', ') : err.message;
     return res.status(400).json({
       success: false,
       error: {
         code: 'VALIDATION_ERROR',
         message: errorMessages,
-        details: err.errors,
+        details: issues,
       },
     });
   }

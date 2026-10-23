@@ -201,3 +201,69 @@ export async function getCampaignById(req, res, next) {
     next(error);
   }
 }
+
+export async function inviteCreator(req, res, next) {
+  try {
+    const userProject = await prisma.projectProfile.findUnique({
+      where: { userId: req.user.id },
+    });
+
+    if (!userProject) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'NO_PROJECT_PROFILE',
+          message: 'You must have a Project Profile to invite creators',
+        },
+      });
+    }
+
+    const campaignId = req.params.id || req.body.campaignId;
+    if (!campaignId) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'CAMPAIGN_ID_REQUIRED',
+          message: 'Campaign ID is required to invite a creator',
+        },
+      });
+    }
+
+    const { creatorId, message, proposedRate, proposedDeliverables } = req.body;
+
+    const result = await campaignService.inviteCreatorToCampaign({
+      campaignId,
+      projectProfileId: userProject.id,
+      creatorId,
+      message,
+      proposedRate,
+      proposedDeliverables,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Creator successfully invited to campaign',
+      data: result,
+    });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.code || 'INVITATION_ERROR',
+          message: error.message,
+        },
+      });
+    }
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        error: {
+          code: 'DUPLICATE_INVITATION',
+          message: 'This creator has already been invited or applied to this campaign',
+        },
+      });
+    }
+    next(error);
+  }
+}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../utils/api';
 import { calculateProfileCompletion } from '../utils/profileCompletion';
+import { useAuth } from '../context/AuthContext';
 import {
   User,
   Sparkles,
@@ -24,6 +25,7 @@ import {
 } from 'lucide-react';
 
 export default function CreatorProfileDashboard({ onNavigate }) {
+  const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -99,7 +101,7 @@ export default function CreatorProfileDashboard({ onNavigate }) {
       if (res.success && res.data) {
         const p = res.data;
         setProfile(p);
-        setDisplayName(p.displayName || '');
+        setDisplayName(p.displayName || user?.name || '');
         setHeadline(p.headline || '');
         setBio(p.bio || '');
         setCategory(p.category || 'Web3 Creator');
@@ -123,6 +125,10 @@ export default function CreatorProfileDashboard({ onNavigate }) {
     } catch (err) {
       if (err.status !== 404) {
         setError(err.message || 'Failed to load profile');
+      } else {
+        if (user?.name && !displayName) {
+          setDisplayName(user.name);
+        }
       }
     } finally {
       setLoading(false);
@@ -166,34 +172,42 @@ export default function CreatorProfileDashboard({ onNavigate }) {
     fetchCollaborations();
   }, []);
 
+  useEffect(() => {
+    if (!profile && user?.name && !displayName) {
+      setDisplayName(user.name);
+    }
+  }, [user, profile]);
+
+  const getProfilePayload = () => ({
+    displayName: displayName?.trim() || user?.name || 'Creator',
+    headline: headline?.trim() || '',
+    bio: bio?.trim() || '',
+    category: category || 'Web3 Creator',
+    location: location?.trim() || '',
+    availability: availability || 'Available',
+    profileImage: profileImage?.trim() || '',
+    coverImage: coverImage?.trim() || '',
+    youtube: youtube?.trim() || '',
+    twitter: twitter?.trim() || '',
+    linkedin: linkedin?.trim() || '',
+    instagram: instagram?.trim() || '',
+    discord: discord?.trim() || '',
+    website: website?.trim() || '',
+    skills,
+    services,
+    portfolio,
+  });
+
   const handleSaveProfile = async (e) => {
     e?.preventDefault();
     setSaving(true);
     setMessage(null);
     setError(null);
 
-    const payload = {
-      displayName: displayName || 'Creator',
-      headline,
-      bio,
-      category,
-      location,
-      availability,
-      profileImage,
-      coverImage,
-      youtube,
-      twitter,
-      linkedin,
-      instagram,
-      discord,
-      website,
-      skills,
-      services,
-      portfolio,
-    };
+    const payload = getProfilePayload();
 
     try {
-      const endpoint = profile ? '/creators/me' : '/creators/me';
+      const endpoint = '/creators/me';
       const method = profile ? 'PUT' : 'POST';
       const res = await apiRequest(endpoint, {
         method,
@@ -203,9 +217,11 @@ export default function CreatorProfileDashboard({ onNavigate }) {
       if (res.success && res.data) {
         setProfile(res.data);
         setMessage('Profile changes saved successfully!');
+        return res.data;
       }
     } catch (err) {
       setError(err.message || 'Failed to save profile changes');
+      return null;
     } finally {
       setSaving(false);
     }
@@ -215,14 +231,46 @@ export default function CreatorProfileDashboard({ onNavigate }) {
     setSubmitting(true);
     setMessage(null);
     setError(null);
-    try {
-      // Save changes first if modified
-      await handleSaveProfile();
 
-      const res = await apiRequest('/creators/me/submit', { method: 'POST' });
-      if (res.success && res.data) {
-        setProfile(res.data);
-        setMessage('Profile submitted for Admin review and approval!');
+    const payload = getProfilePayload();
+
+    try {
+      let savedProfile = profile;
+
+      // 1. Ensure the profile is successfully created or updated first
+      if (!savedProfile) {
+        const createRes = await apiRequest('/creators/me', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+
+        if (createRes.success && createRes.data) {
+          savedProfile = createRes.data;
+          setProfile(createRes.data);
+        } else {
+          throw new Error(createRes.message || 'Failed to initialize profile before submission');
+        }
+      } else {
+        const updateRes = await apiRequest('/creators/me', {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+
+        if (updateRes.success && updateRes.data) {
+          savedProfile = updateRes.data;
+          setProfile(updateRes.data);
+        } else {
+          throw new Error(updateRes.message || 'Failed to update profile before submission');
+        }
+      }
+
+      // 2. Submit for Admin Approval
+      const submitRes = await apiRequest('/creators/me/submit', { method: 'POST' });
+      if (submitRes.success && submitRes.data) {
+        setProfile(submitRes.data);
+        setMessage('Profile submitted successfully for Admin review and approval!');
+      } else {
+        throw new Error(submitRes.message || 'Failed to submit profile for approval');
       }
     } catch (err) {
       setError(err.message || 'Failed to submit profile for approval');
@@ -361,11 +409,19 @@ export default function CreatorProfileDashboard({ onNavigate }) {
             )}
           </div>
         ) : (
-          <div className="p-5 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-200 flex items-center justify-between">
+          <div className="p-5 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
             <div>
               <h3 className="text-base font-bold font-sans">Initialize Your Creator Profile</h3>
-              <p className="text-xs text-slate-300 mt-0.5">Complete your details below to activate your creator portfolio on CrypLift.</p>
+              <p className="text-xs text-slate-300 mt-0.5">Complete your details below and submit for admin review to get featured on CrypLift.</p>
             </div>
+            <button
+              onClick={handleSubmitForApproval}
+              disabled={submitting || saving}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all flex items-center gap-2 shrink-0 disabled:opacity-50"
+            >
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              <span>Submit for Approval</span>
+            </button>
           </div>
         )}
 

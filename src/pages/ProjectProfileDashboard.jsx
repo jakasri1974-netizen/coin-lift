@@ -278,7 +278,11 @@ export default function ProjectProfileDashboard({ onNavigate }) {
     setCampCategory(camp.category || 'DeFi');
     setCampBudget(camp.budget !== undefined ? String(camp.budget) : '');
     setCampCurrency(camp.currency || 'USD');
-    setCampDeliverables(camp.deliverables || '');
+    setCampDeliverables(
+      Array.isArray(camp.deliverables)
+        ? camp.deliverables.join(', ')
+        : (camp.deliverables || '')
+    );
     setCampRequirements(camp.requirements || '');
     setCampDeadline(camp.deadline ? new Date(camp.deadline).toISOString().split('T')[0] : '');
     setShowCampaignModal(true);
@@ -288,6 +292,17 @@ export default function ProjectProfileDashboard({ onNavigate }) {
     if (e) e.preventDefault();
     if (!campTitle.trim() || !campDescription.trim()) {
       setError('Campaign Title and Description are required');
+      return;
+    }
+
+    const parsedDeliverables = Array.isArray(campDeliverables)
+      ? campDeliverables
+      : (typeof campDeliverables === 'string'
+          ? campDeliverables.split(/[\n,]+/).map((d) => d.trim()).filter(Boolean)
+          : []);
+
+    if (parsedDeliverables.length === 0) {
+      setError('At least one deliverable is required');
       return;
     }
 
@@ -301,7 +316,7 @@ export default function ProjectProfileDashboard({ onNavigate }) {
       category: campCategory,
       budget: parseFloat(campBudget) || 0,
       currency: campCurrency,
-      deliverables: campDeliverables,
+      deliverables: parsedDeliverables,
       requirements: campRequirements,
       deadline: campDeadline ? new Date(campDeadline).toISOString() : null,
     };

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Sparkles, ShieldCheck, Zap, Layers, Users, TrendingUp, CheckCircle2, Flame, Play, Share2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Hero({ onNavigate }) {
+  const { user, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState('all');
   const [pulseNode, setPulseNode] = useState(0);
 
@@ -60,10 +62,16 @@ export default function Hero({ onNavigate }) {
               </button>
 
               <button
-                onClick={() => onNavigate('/signup')}
+                onClick={() => {
+                  if (isAuthenticated && user?.role === 'CREATOR') {
+                    onNavigate('/creator/profile');
+                  } else {
+                    onNavigate('/signup');
+                  }
+                }}
                 className="rounded-xl px-7 py-4 text-sm font-semibold text-slate-200 bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-cyan-500/40 transition-all duration-300 flex items-center justify-center gap-2 backdrop-blur-md"
               >
-                <span>Join as a Creator</span>
+                <span>{isAuthenticated && user?.role === 'CREATOR' ? 'My Creator Profile' : 'Join as a Creator'}</span>
                 <Users className="w-4 h-4 text-cyan-400" />
               </button>
             </div>

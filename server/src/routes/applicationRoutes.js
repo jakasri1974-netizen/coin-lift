@@ -7,9 +7,10 @@ import {
   getAllApplications,
   getApplicationById,
 } from '../controllers/applicationController.js';
+import { inviteCreator } from '../controllers/campaignController.js';
 import { validate } from '../middleware/validate.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
-import { createApplicationSchema, updateApplicationStatusSchema } from '../utils/validators.js';
+import { createApplicationSchema, updateApplicationStatusSchema, inviteCreatorSchema } from '../utils/validators.js';
 
 const router = Router();
 
@@ -27,6 +28,15 @@ router.post(
   authenticateToken,
   requireRole('CREATOR'),
   withdrawApplication
+);
+
+// Protected Project Owner Campaign Invitation Route
+router.post(
+  '/invite',
+  authenticateToken,
+  requireRole('PROJECT_OWNER'),
+  validate(inviteCreatorSchema),
+  inviteCreator
 );
 
 // Protected Project Owner Review Route

@@ -30,7 +30,7 @@ export default function AdminLayout({ currentAdminPath, onNavigate, children }) 
 
   const handleLogout = () => {
     logout();
-    onNavigate('/admin/login');
+    onNavigate('/login');
   };
 
   return (
@@ -87,6 +87,7 @@ export default function AdminLayout({ currentAdminPath, onNavigate, children }) 
               </div>
             </div>
             <button
+              id="admin-logout-btn"
               onClick={handleLogout}
               className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-red-400 transition-colors"
               title="Sign Out"

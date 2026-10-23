@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, Mail, Lock, CheckCircle2, Wallet, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,7 +9,23 @@ export default function LoginPage({ onNavigate }) {
   const [formError, setFormError] = useState(null);
   const [loggedIn, setLoggedIn] = useState(false);
 
-  const { login } = useAuth();
+  const { user, isAuthenticated, loading, login, logout } = useAuth();
+
+  // If already authenticated and visiting /login directly, redirect to role dashboard
+  useEffect(() => {
+    if (!loading && isAuthenticated && user && !isSubmitting && !loggedIn) {
+      const role = user.role;
+      if (role === 'CREATOR') {
+        onNavigate('/creator/profile');
+      } else if (role === 'PROJECT_OWNER') {
+        onNavigate('/project/profile');
+      } else if (role === 'ADMIN') {
+        onNavigate('/admin');
+      } else {
+        onNavigate('/');
+      }
+    }
+  }, [loading, isAuthenticated, user, isSubmitting, loggedIn, onNavigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,14 +36,41 @@ export default function LoginPage({ onNavigate }) {
     setIsSubmitting(false);
 
     if (result && result.success) {
-      setLoggedIn(true);
-      setTimeout(() => {
-        onNavigate('/');
-      }, 1000);
+      const role = result.user?.role;
+      if (role === 'CREATOR') {
+        setLoggedIn(true);
+        setTimeout(() => {
+          onNavigate('/creator/profile');
+        }, 1000);
+      } else if (role === 'PROJECT_OWNER') {
+        setLoggedIn(true);
+        setTimeout(() => {
+          onNavigate('/project/profile');
+        }, 1000);
+      } else if (role === 'ADMIN') {
+        setLoggedIn(true);
+        setTimeout(() => {
+          onNavigate('/admin');
+        }, 1000);
+      } else {
+        logout();
+        setFormError('Account role is missing or unsupported. Please contact platform support.');
+      }
     } else {
       setFormError(result?.error || 'Login failed. Please check your credentials.');
     }
   };
+
+  if (!loading && isAuthenticated && user && !loggedIn) {
+    return (
+      <div className="pt-28 pb-20 bg-[#05070e] min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-3 text-cyan-400">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span className="text-sm font-medium text-slate-300">Redirecting to your dashboard...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pt-28 pb-20 bg-[#05070e] min-h-screen flex items-center justify-center">
@@ -43,12 +86,12 @@ export default function LoginPage({ onNavigate }) {
               Welcome Back to CRYP<span className="text-cyan-400">LIFT</span>
             </h2>
             <p className="text-xs text-slate-400 mt-1">
-              Sign in to manage creator collaborations & active campaigns
+              Sign in to access your platform dashboard and workspace
             </p>
           </div>
 
           {formError && (
-            <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center gap-2.5">
+            <div id="login-error-alert" className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center gap-2.5">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
               <span>{formError}</span>
             </div>
@@ -68,9 +111,10 @@ export default function LoginPage({ onNavigate }) {
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   <input
+                    id="login-email-input"
                     type="email"
                     required
-                    placeholder="creator@domain.com"
+                    placeholder="user@domain.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-[#05070e] text-xs text-white pl-10 pr-4 py-3 rounded-xl border border-white/10 focus:outline-none focus:border-cyan-500"
@@ -83,6 +127,7 @@ export default function LoginPage({ onNavigate }) {
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   <input
+                    id="login-password-input"
                     type="password"
                     required
                     placeholder="••••••••••••"
@@ -102,6 +147,7 @@ export default function LoginPage({ onNavigate }) {
               </div>
 
               <button
+                id="login-submit-btn"
                 type="submit"
                 disabled={isSubmitting}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all flex items-center justify-center gap-2 disabled:opacity-50"

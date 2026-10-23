@@ -7,10 +7,11 @@ import {
   getCampaignApplications,
   getAllCampaigns,
   getCampaignById,
+  inviteCreator,
 } from '../controllers/campaignController.js';
 import { validate } from '../middleware/validate.js';
 import { authenticateToken, optionalAuthToken, requireRole } from '../middleware/auth.js';
-import { createCampaignSchema, updateCampaignSchema } from '../utils/validators.js';
+import { createCampaignSchema, updateCampaignSchema, inviteCreatorSchema } from '../utils/validators.js';
 
 const router = Router();
 
@@ -22,6 +23,20 @@ router.post(
   requireRole('PROJECT_OWNER'),
   validate(createCampaignSchema),
   createCampaign
+);
+router.post(
+  '/:id/invite',
+  authenticateToken,
+  requireRole('PROJECT_OWNER'),
+  validate(inviteCreatorSchema),
+  inviteCreator
+);
+router.post(
+  '/invite',
+  authenticateToken,
+  requireRole('PROJECT_OWNER'),
+  validate(inviteCreatorSchema),
+  inviteCreator
 );
 router.put(
   '/:id',

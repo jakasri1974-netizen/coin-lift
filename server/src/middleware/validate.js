@@ -7,14 +7,15 @@ export const validate = (schema) => (req, res, next) => {
     req.body = schema.parse(req.body);
     next();
   } catch (error) {
-    if (error.errors) {
+    const issues = error.errors || error.issues;
+    if (issues && Array.isArray(issues)) {
       return res.status(400).json({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid request payload',
-          details: error.errors.map((e) => ({
-            field: e.path.join('.'),
+          message: issues.map((e) => e.message).join(', ') || 'Invalid request payload',
+          details: issues.map((e) => ({
+            field: Array.isArray(e.path) ? e.path.join('.') : String(e.path || ''),
             message: e.message,
           })),
         },
